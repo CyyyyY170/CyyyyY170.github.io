@@ -4,6 +4,19 @@
   
     
     <entry>
+      <title>UE蓝图编程基础及实现角色的移动功能</title>
+      <link href="/2026/07/09/%E8%93%9D%E5%9B%BE%E7%BC%96%E7%A8%8B/"/>
+      <url>/2026/07/09/%E8%93%9D%E5%9B%BE%E7%BC%96%E7%A8%8B/</url>
+      
+        <content type="html"><![CDATA[<h1 id="UE5蓝图编程是一种可视化的脚本系统，通过连接节点来创建游戏逻辑。"><a href="#UE5蓝图编程是一种可视化的脚本系统，通过连接节点来创建游戏逻辑。" class="headerlink" title="UE5蓝图编程是一种可视化的脚本系统，通过连接节点来创建游戏逻辑。"></a>UE5蓝图编程是一种可视化的脚本系统，通过连接节点来创建游戏逻辑。</h1><h2 id="事件开始运行"><a href="#事件开始运行" class="headerlink" title="事件开始运行"></a>事件开始运行</h2><p> 启动播放键后将会运行后面节点的逻辑代码。</p><h2 id="事件Actor开始重叠"><a href="#事件Actor开始重叠" class="headerlink" title="事件Actor开始重叠"></a>事件Actor开始重叠</h2><p> 当有物体重叠到了actor上，执行后面的逻辑代码。</p><h2 id="事件Tick"><a href="#事件Tick" class="headerlink" title="事件Tick"></a>事件Tick</h2><p> actor生成出来后，每一帧执行一次后面的逻辑代码。</p><h2 id="节点与引脚"><a href="#节点与引脚" class="headerlink" title="节点与引脚"></a>节点与引脚</h2><p> 具体连线方式上，执行引脚决定先后顺序，数据引脚传递具体数值。</p><p><strong>逻辑思考靠的是变量存储数据（数字、布尔值、对象等），并通过函数和宏封装可复用逻辑。简单说，函数适合需要被继承重写或跨蓝图调用的逻辑，而宏更像“复制粘贴”的代码片段，可有多条执行出口。</strong></p><h1 id="角色移动"><a href="#角色移动" class="headerlink" title="角色移动"></a>角色移动</h1><h2 id="准备角色蓝图"><a href="#准备角色蓝图" class="headerlink" title="准备角色蓝图"></a>准备角色蓝图</h2><ol><li>创建一个游戏模式：在Character中创建一个游戏模式基础（BP_GameMode）。</li><li>创建主角：在内容浏览器中右键，选择“蓝图类” -&gt; “Character”（角色）。这个父类自带网格体、胶囊体碰撞和移动组件。</li><li>绑定模型：打开BP_GameMode，将创建的主角输入默认的pawn类中<br> <strong>此时主角已与游戏模式相关联，接下来还需要将游戏模式与项目场景进行关联。</strong></li></ol><h2 id="设置输入映射"><a href="#设置输入映射" class="headerlink" title="设置输入映射"></a>设置输入映射</h2><p> 使用增强输入，该系统与旧代输入映射相比更加灵活，利于扩展。<br> | 核心架构 | 基于数据资产（输入动作、输入修饰器、输入触发器），通过输入管理组件处理 |<br> | 按键冲突 | 完美支持。通过优先级和阻挡策略轻松管理（如：长按E和短按E）|<br> | 复杂操作 | 内置支持。通过按住（Hold）、点按（Tap）、按下（Down）等触发器直接实现 |<br> | 运行时修改 | 完全支持。可在运行时动态添加、移除或改变绑定 |<br> | 设备适配 | 自动处理。通过Modifiers轻松转换不同设备的输入值（如摇杆死区） |<br> | 性能与维护 | 项目更清晰，逻辑与输入资产分离，易于维护和调试 |</p><p> 在code文件夹中创建input，用于放入关于输入的文件。在input中创建输入操作，并将操作值类型改为Axis2D.<br> 之后在操作映射上下文中绑定输入操作并配置好移动按键，注意负值的添加（x-y坐标系）。</p><h2 id="激活增强输入"><a href="#激活增强输入" class="headerlink" title="激活增强输入"></a>激活增强输入</h2><p> 在角色蓝图中获取玩家控制器，调用增强输入本地玩家子系统，并创建添加映射上下文，连接事件开始运行。</p><h2 id="角色移动逻辑实现"><a href="#角色移动逻辑实现" class="headerlink" title="角色移动逻辑实现"></a>角色移动逻辑实现</h2><p> 调出输入操作，拖出Action Value引脚（执行相关操作，他的值就会发生相应的变化），调用break拆分向量2D，分别获取X和Y值。<br> 添加input移动输入（实现角色在场景中的移动），如果要实现角色的持续移动，就把输入操作的triggered引脚与input移动输入连接。<br> 获取角色向前向量，与world direction相连，用于实时获取角色朝向。然后通过scale value决定角色移动端速度及方向（接收到负值则反向移动）。<br> 左右移动同理，只需添加一个向右向量，决定角色移动的正值。</p>]]></content>
+      
+      
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>以此博客来记录我的学习历程</title>
       <link href="/2026/07/08/%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/"/>
       <url>/2026/07/08/%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/</url>
@@ -33,17 +46,6 @@
     
     
     <entry>
-      <title>关于</title>
-      <link href="/about/index.html"/>
-      <url>/about/index.html</url>
-      
-        <content type="html"><![CDATA[]]></content>
-      
-    </entry>
-    
-    
-    
-    <entry>
       <title>电影</title>
       <link href="/movies/index.html"/>
       <url>/movies/index.html</url>
@@ -58,6 +60,17 @@
       <title>音乐</title>
       <link href="/music/index.html"/>
       <url>/music/index.html</url>
+      
+        <content type="html"><![CDATA[]]></content>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>关于</title>
+      <link href="/about/index.html"/>
+      <url>/about/index.html</url>
       
         <content type="html"><![CDATA[]]></content>
       

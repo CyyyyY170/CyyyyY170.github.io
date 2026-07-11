@@ -1,0 +1,207 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>UE蓝图编程基础及实现角色的移动功能 | CyyyyY的个人博客</title><meta name="author" content="CyyyyY,3318055170@qq.com"><meta name="copyright" content="CyyyyY"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="UE5蓝图编程是一种可视化的脚本系统，通过连接节点来创建游戏逻辑。事件开始运行 启动播放键后将会运行后面节点的逻辑代码。 事件Actor开始重叠 当有物体重叠到了actor上，执行后面的逻辑代码。 事件Tick actor生成出来后，每一帧执行一次后面的逻辑代码。 节点与引脚 具体连线方式上，执行引脚决定先后顺序，数据引脚传递具体数值。 逻辑思考靠的是变量存储数据（数字、布尔值、对象等），并通过函">
+<meta property="og:type" content="article">
+<meta property="og:title" content="UE蓝图编程基础及实现角色的移动功能">
+<meta property="og:url" content="https://cyyyyy170.github.io/2026/07/09/UE%E8%93%9D%E5%9B%BE%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80%E5%8F%8A%E5%AE%9E%E7%8E%B0%E8%A7%92%E8%89%B2%E7%9A%84%E7%A7%BB%E5%8A%A8%E5%8A%9F%E8%83%BD/index.html">
+<meta property="og:site_name" content="CyyyyY的个人博客">
+<meta property="og:description" content="UE5蓝图编程是一种可视化的脚本系统，通过连接节点来创建游戏逻辑。事件开始运行 启动播放键后将会运行后面节点的逻辑代码。 事件Actor开始重叠 当有物体重叠到了actor上，执行后面的逻辑代码。 事件Tick actor生成出来后，每一帧执行一次后面的逻辑代码。 节点与引脚 具体连线方式上，执行引脚决定先后顺序，数据引脚传递具体数值。 逻辑思考靠的是变量存储数据（数字、布尔值、对象等），并通过函">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cyyyyy170.github.io/img/reze3.png">
+<meta property="article:published_time" content="2026-07-09T08:12:29.924Z">
+<meta property="article:modified_time" content="2026-07-11T01:27:10.255Z">
+<meta property="article:author" content="CyyyyY">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cyyyyy170.github.io/img/reze3.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "UE蓝图编程基础及实现角色的移动功能",
+  "url": "https://cyyyyy170.github.io/2026/07/09/UE%E8%93%9D%E5%9B%BE%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80%E5%8F%8A%E5%AE%9E%E7%8E%B0%E8%A7%92%E8%89%B2%E7%9A%84%E7%A7%BB%E5%8A%A8%E5%8A%9F%E8%83%BD/",
+  "image": "https://cyyyyy170.github.io/img/reze3.png",
+  "datePublished": "2026-07-09T08:12:29.924Z",
+  "dateModified": "2026-07-11T01:27:10.255Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "CyyyyY",
+      "url": "https://cyyyyy170.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://cyyyyy170.github.io/2026/07/09/UE%E8%93%9D%E5%9B%BE%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80%E5%8F%8A%E5%AE%9E%E7%8E%B0%E8%A7%92%E8%89%B2%E7%9A%84%E7%A7%BB%E5%8A%A8%E5%8A%9F%E8%83%BD/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":true,"top_n_per_article":1,"unescape":true,"pagination":{"enable":true,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":230,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'UE蓝图编程基础及实现角色的移动功能',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/reze.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/myface.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">4</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/reze3.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">CyyyyY的个人博客</span></a><a class="nav-page-title" href="/"><span class="site-name">UE蓝图编程基础及实现角色的移动功能</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">UE蓝图编程基础及实现角色的移动功能</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-07-09T08:12:29.924Z" title="发表于 2026-07-09 16:12:29">2026-07-09</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-11T01:27:10.255Z" title="更新于 2026-07-11 09:27:10">2026-07-11</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">848</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>2分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><div id="post-outdate-notice" data="{&quot;limitDay&quot;:365,&quot;messagePrev&quot;:&quot;已经过了&quot;,&quot;messageNext&quot;:&quot;天自上次更新，文章内容可能已经过期。&quot;,&quot;postUpdate&quot;:&quot;2026-07-11 09:27:10&quot;}" hidden></div><h1 id="UE5蓝图编程是一种可视化的脚本系统，通过连接节点来创建游戏逻辑。"><a href="#UE5蓝图编程是一种可视化的脚本系统，通过连接节点来创建游戏逻辑。" class="headerlink" title="UE5蓝图编程是一种可视化的脚本系统，通过连接节点来创建游戏逻辑。"></a>UE5蓝图编程是一种可视化的脚本系统，通过连接节点来创建游戏逻辑。</h1><h2 id="事件开始运行"><a href="#事件开始运行" class="headerlink" title="事件开始运行"></a>事件开始运行</h2><p> 启动播放键后将会运行后面节点的逻辑代码。</p>
+<h2 id="事件Actor开始重叠"><a href="#事件Actor开始重叠" class="headerlink" title="事件Actor开始重叠"></a>事件Actor开始重叠</h2><p> 当有物体重叠到了actor上，执行后面的逻辑代码。</p>
+<h2 id="事件Tick"><a href="#事件Tick" class="headerlink" title="事件Tick"></a>事件Tick</h2><p> actor生成出来后，每一帧执行一次后面的逻辑代码。</p>
+<h2 id="节点与引脚"><a href="#节点与引脚" class="headerlink" title="节点与引脚"></a>节点与引脚</h2><p> 具体连线方式上，执行引脚决定先后顺序，数据引脚传递具体数值。</p>
+<p><strong>逻辑思考靠的是变量存储数据（数字、布尔值、对象等），并通过函数和宏封装可复用逻辑。简单说，函数适合需要被继承重写或跨蓝图调用的逻辑，而宏更像“复制粘贴”的代码片段，可有多条执行出口。</strong></p>
+<h1 id="角色移动"><a href="#角色移动" class="headerlink" title="角色移动"></a>角色移动</h1><h2 id="准备角色蓝图"><a href="#准备角色蓝图" class="headerlink" title="准备角色蓝图"></a>准备角色蓝图</h2><ol>
+<li>创建一个游戏模式：在Character中创建一个游戏模式基础（BP_GameMode）。</li>
+<li>创建主角：在内容浏览器中右键，选择“蓝图类” -&gt; “Character”（角色）。这个父类自带网格体、胶囊体碰撞和移动组件。</li>
+<li>绑定模型：打开BP_GameMode，将创建的主角输入默认的pawn类中<br> <strong>此时主角已与游戏模式相关联，接下来还需要将游戏模式与项目场景进行关联。</strong></li>
+</ol>
+<h2 id="设置输入映射"><a href="#设置输入映射" class="headerlink" title="设置输入映射"></a>设置输入映射</h2><p> 使用增强输入，该系统与旧代输入映射相比更加灵活，利于扩展。</p>
+<table>
+<thead>
+<tr>
+<th align="center">增强输入</th>
+<th align="center">优点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">核心架构</td>
+<td align="center">基于数据资产（输入动作、输入修饰器、输入触发器），通过输入管理组件处理</td>
+</tr>
+<tr>
+<td align="center">按键冲突</td>
+<td align="center">完美支持。通过优先级和阻挡策略轻松管理（如：长按E和短按E）</td>
+</tr>
+<tr>
+<td align="center">复杂操作</td>
+<td align="center">内置支持。通过按住（Hold）、点按（Tap）、按下（Down）等触发器直接实现</td>
+</tr>
+<tr>
+<td align="center">运行时修改</td>
+<td align="center">完全支持。可在运行时动态添加、移除或改变绑定</td>
+</tr>
+<tr>
+<td align="center">设备适配</td>
+<td align="center">自动处理。通过Modifiers轻松转换不同设备的输入值（如摇杆死区）</td>
+</tr>
+<tr>
+<td align="center">性能与维护</td>
+<td align="center">项目更清晰，逻辑与输入资产分离，易于维护和调试</td>
+</tr>
+</tbody></table>
+<p> 在code文件夹中创建input，用于放入关于输入的文件。在input中创建输入操作，并将操作值类型改为Axis2D.<br> 之后在操作映射上下文中绑定输入操作并配置好移动按键，注意负值的添加（x-y坐标系）。</p>
+<h2 id="激活增强输入"><a href="#激活增强输入" class="headerlink" title="激活增强输入"></a>激活增强输入</h2><p> 在角色蓝图中获取玩家控制器，调用增强输入本地玩家子系统，并创建添加映射上下文，连接事件开始运行。</p>
+<h2 id="角色移动逻辑实现"><a href="#角色移动逻辑实现" class="headerlink" title="角色移动逻辑实现"></a>角色移动逻辑实现</h2><p> 调出输入操作，拖出Action Value引脚（执行相关操作，他的值就会发生相应的变化），调用break拆分向量2D，分别获取X和Y值。<br> 添加input移动输入（实现角色在场景中的移动），如果要实现角色的持续移动，就把输入操作的triggered引脚与input移动输入连接。<br> 获取角色向前向量，与world direction相连，用于实时获取角色朝向。然后通过scale value决定角色移动端速度及方向（接收到负值则反向移动）。<br> 左右移动同理，只需添加一个向右向量，决定角色移动的正值。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://cyyyyy170.github.io">CyyyyY</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://cyyyyy170.github.io/2026/07/09/UE%E8%93%9D%E5%9B%BE%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80%E5%8F%8A%E5%AE%9E%E7%8E%B0%E8%A7%92%E8%89%B2%E7%9A%84%E7%A7%BB%E5%8A%A8%E5%8A%9F%E8%83%BD/">https://cyyyyy170.github.io/2026/07/09/UE%E8%93%9D%E5%9B%BE%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80%E5%8F%8A%E5%AE%9E%E7%8E%B0%E8%A7%92%E8%89%B2%E7%9A%84%E7%A7%BB%E5%8A%A8%E5%8A%9F%E8%83%BD/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://cyyyyy170.github.io" target="_blank">CyyyyY的个人博客</a>！</span></div></div><div class="tag_share"><div class="post-share"><div class="social-share" data-image="/img/reze3.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/07/11/%E8%A7%86%E8%A7%92%E6%97%8B%E8%BD%AC%EF%BC%8C%E8%87%AA%E5%8A%A8%E9%97%A8%E5%8A%9F%E8%83%BD/" title="角色视角旋转以及自动门功能的实现"><img class="cover" src="/img/blue%20sea.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">角色视角旋转以及自动门功能的实现</div></div><div class="info-2"><div class="info-item-1">第一人称视角旋转在UE5中实现视角旋转，最核心的机制就是将鼠标或摇杆的输入，转化为对摄像机旋转（Yaw和Pitch）的控制。根据游戏类型（第一人称、第三人称或RTS），实现方式略有不同，但都推荐使用增强输入系统（Enhanced Input System）。 实现步骤 捕获输入: 创建 InputAction 数据资产，类型选 Axis2D (Vector2D)，用来读取鼠标横向（X轴）和纵向（Y轴）的移动值。  绑定事件：在角色蓝图或玩家控制器中，把输入操作和响应函数绑定。触发事件通常选 Triggered，这样鼠标移动时就会持续触发。  蓝图实现: 调出输入节点，节点触发事件选择Triggered,这样移动鼠标时就会持续触发。拉出引脚调出add控制器Yaw输入节点，通过更改Yaw的值来实现视角的旋转（z轴），同理添加Pitch输入节点（y轴）。从输入的 Action Value 节点拉出引脚，拆分为 X (Yaw) 和 Y (Pitch) 值，分别连接到 Add Controller Yaw Input 和 Add Controller Pitch Input 节点即可。  ...</div></div></div></a><a class="pagination-related" href="/2026/07/08/%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" title="以此博客来记录我的学习历程"><img class="cover" src="/img/reze4.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">以此博客来记录我的学习历程</div></div><div class="info-2"><div class="info-item-1">分享一些搭建博客前后的想法以及后续的管理。 为什么要搭建这个博客我是一个自律性不强的人，想学什么东西都坚持不了太久，想着如果再继续这样下去肯定会变成路边一条吧。。。于是自己当时考虑了一段时间，觉得自己与其去接触一些不感兴趣的，不如让自己去追求内心真正喜欢的东西。所以我就想先搭建一个博客，既是用来记录我的学习，也是对自己的一种督促吧？偶然一次机会了解到了一个叫hexo的博客系统，就打算跟着教程搭建这个博客。 我对未来学习的规划其实也没有想得太多，现在也还是处于一种“想到了，觉得还不错，自己也会喜欢的吧”一个阶段，我也没有具体的了解过到底要学什么，精通什么。哦对了，我还没说我想往哪个方向努力，现在的话我是想要向游戏行业发展，自身确实对游戏有兴趣。应该会有人觉得喜欢玩游戏不一定喜欢从事游戏相关的工作，但这也是我能想到的自己最愿意发展的一个方向了，也许未来我会做出与现在不同的抉择，但那也毕竟是未来才会考虑的事情了。我想就先按照自己现在的想法，提升自己吧。 对未来的自己想说的话也许你已经成为了自己当时所期望的人，也有可能早就放弃了，但无论如何，都要记得曾经的你为了现在而努力过了 关于该博客...</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/myface.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">CyyyyY</div><div class="author-info-description">致力于所爱</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">4</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/CyyyyY170"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/CyyyyY170" target="_blank" title="Github"><i class="fab fa-github" style="color: #00AEEC;"></i></a><a class="social-icon" href="https://steamcommunity.com/profiles/76561199184466419/" target="_blank" title="Steam"><i class="fab fa-steam" style="color: #00AEEC;"></i></a><a class="social-icon" href="https://space.bilibili.com/388242453" target="_blank" title="BiliBili"><i class="fab fa-bilibili" style="color: #00AEEC;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">一个彩笔的学习分享</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#UE5%E8%93%9D%E5%9B%BE%E7%BC%96%E7%A8%8B%E6%98%AF%E4%B8%80%E7%A7%8D%E5%8F%AF%E8%A7%86%E5%8C%96%E7%9A%84%E8%84%9A%E6%9C%AC%E7%B3%BB%E7%BB%9F%EF%BC%8C%E9%80%9A%E8%BF%87%E8%BF%9E%E6%8E%A5%E8%8A%82%E7%82%B9%E6%9D%A5%E5%88%9B%E5%BB%BA%E6%B8%B8%E6%88%8F%E9%80%BB%E8%BE%91%E3%80%82"><span class="toc-number">1.</span> <span class="toc-text">UE5蓝图编程是一种可视化的脚本系统，通过连接节点来创建游戏逻辑。</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8B%E4%BB%B6%E5%BC%80%E5%A7%8B%E8%BF%90%E8%A1%8C"><span class="toc-number">1.1.</span> <span class="toc-text">事件开始运行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8B%E4%BB%B6Actor%E5%BC%80%E5%A7%8B%E9%87%8D%E5%8F%A0"><span class="toc-number">1.2.</span> <span class="toc-text">事件Actor开始重叠</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8B%E4%BB%B6Tick"><span class="toc-number">1.3.</span> <span class="toc-text">事件Tick</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%8A%82%E7%82%B9%E4%B8%8E%E5%BC%95%E8%84%9A"><span class="toc-number">1.4.</span> <span class="toc-text">节点与引脚</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A7%92%E8%89%B2%E7%A7%BB%E5%8A%A8"><span class="toc-number">2.</span> <span class="toc-text">角色移动</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E8%A7%92%E8%89%B2%E8%93%9D%E5%9B%BE"><span class="toc-number">2.1.</span> <span class="toc-text">准备角色蓝图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AE%E8%BE%93%E5%85%A5%E6%98%A0%E5%B0%84"><span class="toc-number">2.2.</span> <span class="toc-text">设置输入映射</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%BF%80%E6%B4%BB%E5%A2%9E%E5%BC%BA%E8%BE%93%E5%85%A5"><span class="toc-number">2.3.</span> <span class="toc-text">激活增强输入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%92%E8%89%B2%E7%A7%BB%E5%8A%A8%E9%80%BB%E8%BE%91%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.4.</span> <span class="toc-text">角色移动逻辑实现</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/07/11/%E8%A7%86%E8%A7%92%E6%97%8B%E8%BD%AC%EF%BC%8C%E8%87%AA%E5%8A%A8%E9%97%A8%E5%8A%9F%E8%83%BD/" title="角色视角旋转以及自动门功能的实现"><img src="/img/blue%20sea.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="角色视角旋转以及自动门功能的实现"/></a><div class="content"><a class="title" href="/2026/07/11/%E8%A7%86%E8%A7%92%E6%97%8B%E8%BD%AC%EF%BC%8C%E8%87%AA%E5%8A%A8%E9%97%A8%E5%8A%9F%E8%83%BD/" title="角色视角旋转以及自动门功能的实现">角色视角旋转以及自动门功能的实现</a><time datetime="2026-07-11T01:16:44.687Z" title="发表于 2026-07-11 09:16:44">2026-07-11</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/09/UE%E8%93%9D%E5%9B%BE%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80%E5%8F%8A%E5%AE%9E%E7%8E%B0%E8%A7%92%E8%89%B2%E7%9A%84%E7%A7%BB%E5%8A%A8%E5%8A%9F%E8%83%BD/" title="UE蓝图编程基础及实现角色的移动功能"><img src="/img/reze3.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="UE蓝图编程基础及实现角色的移动功能"/></a><div class="content"><a class="title" href="/2026/07/09/UE%E8%93%9D%E5%9B%BE%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80%E5%8F%8A%E5%AE%9E%E7%8E%B0%E8%A7%92%E8%89%B2%E7%9A%84%E7%A7%BB%E5%8A%A8%E5%8A%9F%E8%83%BD/" title="UE蓝图编程基础及实现角色的移动功能">UE蓝图编程基础及实现角色的移动功能</a><time datetime="2026-07-09T08:12:29.924Z" title="发表于 2026-07-09 16:12:29">2026-07-09</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/08/%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" title="以此博客来记录我的学习历程"><img src="/img/reze4.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="以此博客来记录我的学习历程"/></a><div class="content"><a class="title" href="/2026/07/08/%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" title="以此博客来记录我的学习历程">以此博客来记录我的学习历程</a><time datetime="2026-07-08T03:37:06.878Z" title="发表于 2026-07-08 11:37:06">2026-07-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/07/hello-world/" title="博客搭建完成"><img src="/img/reze2.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="博客搭建完成"/></a><div class="content"><a class="title" href="/2026/07/07/hello-world/" title="博客搭建完成">博客搭建完成</a><time datetime="2026-07-07T02:19:39.306Z" title="发表于 2026-07-07 10:19:39">2026-07-07</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2026 By CyyyyY</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.5"></script></div></div></body></html>

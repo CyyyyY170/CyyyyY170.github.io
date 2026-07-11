@@ -4,6 +4,19 @@
   
     
     <entry>
+      <title>常用流程控制节点</title>
+      <link href="/2026/07/11/%E5%B8%B8%E7%94%A8%E6%B5%81%E7%A8%8B%E6%8E%A7%E5%88%B6%E8%8A%82%E7%82%B9/"/>
+      <url>/2026/07/11/%E5%B8%B8%E7%94%A8%E6%B5%81%E7%A8%8B%E6%8E%A7%E5%88%B6%E8%8A%82%E7%82%B9/</url>
+      
+        <content type="html"><![CDATA[<p><strong>流程控制节点是用于控制蓝图执行顺序和逻辑分支的节点，就像编程中的if—else语句和循环。</strong></p><h1 id="分支节点"><a href="#分支节点" class="headerlink" title="分支节点"></a>分支节点</h1><p><strong>在UE5蓝图中，分支(Branch)节点就是if判断——根据条件决定程序走那条路。</strong></p><ul><li><strong>输入</strong>：Condition(布尔值，True&#x2F;False)</li><li><strong>输出</strong>：True(条件为真执行）和False(条件为假执行)</li></ul><h1 id="Flip-Flop"><a href="#Flip-Flop" class="headerlink" title="Flip Flop"></a>Flip Flop</h1><p><strong>在UE5蓝图中，Flip Flop(触发器)节点是一个交替开关——每次执行它，都会在A和B两个输出之间来回切换。</strong></p><ul><li><strong>第一次执行</strong>：走A</li><li><strong>第二次执行</strong>：走B</li><li><strong>第三次执行</strong>：走A(循环往复进行……)</li></ul><p>如设置控制门的开关，或角色的下蹲。</p><h1 id="Do-Once"><a href="#Do-Once" class="headerlink" title="Do Once"></a>Do Once</h1><p><strong>在UE5蓝图中，Do Once节点的作用就是只执行一次，只有第一次会触发执行，后续调用全部被忽视。</strong></p><ul><li><strong>首次执行</strong>：走Completed输出，同时内部的“锁”被关上。</li><li><strong>后续执行</strong>：什么都不走，直接跳过。</li><li><strong>重置</strong>：调用Reset输入引脚可以重新解锁，让下一次执行生效。</li></ul><h1 id="序列"><a href="#序列" class="headerlink" title="序列"></a>序列</h1><p><strong>在UE5蓝图中，序列节点的作用是按照顺序执行多个引脚(可添加)。</strong></p><ul><li><strong>顺序执行</strong>：顾名思义。</li><li><strong>全部执行</strong>：每个引脚都会走一遍。</li><li><strong>同步执行</strong>：虽然引脚有编号，但引脚0执行完之前。引脚1不会开始。</li></ul><h1 id="延迟"><a href="#延迟" class="headerlink" title="延迟"></a>延迟</h1><p><strong>在UE5蓝图中，延迟节点的作用是让程序等待指定的时间，然后再继续执行后面的逻辑，单位是秒。</strong></p><ul><li><strong>输入</strong>：Duration(等待时间)</li><li><strong>输出</strong>：Completed(完成)</li></ul><h1 id="For-Loop"><a href="#For-Loop" class="headerlink" title="For Loop"></a>For Loop</h1><ul><li><strong>输入</strong>：First Index(起始值)，Last Index(结束值)</li><li><strong>输出</strong>：Loop Index(每次循环触发)，Index(当前值，整数)，Completed(完成时候触发执行)</li></ul><p><strong>执行逻辑</strong>：循环从First Index开始，执行Loop Index，然后Index+1，再执行，直到超过End，最后走Completed。</p><h1 id="Gate"><a href="#Gate" class="headerlink" title="Gate"></a>Gate</h1><p><strong>在UE5蓝图中，Gate(门控)节点的作用是开关——控制执行信号能否通过。打开时信号畅通，关闭时信号被拦截。</strong></p><ul><li><strong>输入</strong>：Enter(进入信号)，Open(开门)，Close(关门),Toggle(切换)。</li><li><strong>输出</strong>：Exit(输出信号)</li></ul>]]></content>
+      
+      
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>角色视角旋转以及自动门功能的实现</title>
       <link href="/2026/07/11/%E8%A7%86%E8%A7%92%E6%97%8B%E8%BD%AC%EF%BC%8C%E8%87%AA%E5%8A%A8%E9%97%A8%E5%8A%9F%E8%83%BD/"/>
       <url>/2026/07/11/%E8%A7%86%E8%A7%92%E6%97%8B%E8%BD%AC%EF%BC%8C%E8%87%AA%E5%8A%A8%E9%97%A8%E5%8A%9F%E8%83%BD/</url>
@@ -70,9 +83,9 @@
     
     
     <entry>
-      <title>音乐</title>
-      <link href="/music/index.html"/>
-      <url>/music/index.html</url>
+      <title>电影</title>
+      <link href="/movies/index.html"/>
+      <url>/movies/index.html</url>
       
         <content type="html"><![CDATA[]]></content>
       
@@ -81,9 +94,9 @@
     
     
     <entry>
-      <title>电影</title>
-      <link href="/movies/index.html"/>
-      <url>/movies/index.html</url>
+      <title>音乐</title>
+      <link href="/music/index.html"/>
+      <url>/music/index.html</url>
       
         <content type="html"><![CDATA[]]></content>
       

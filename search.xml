@@ -4,6 +4,19 @@
   
     
     <entry>
+      <title>2026.7.17笔记</title>
+      <link href="/2026/07/17/2026.7.17%E7%AC%94%E8%AE%B0/"/>
+      <url>/2026/07/17/2026.7.17%E7%AC%94%E8%AE%B0/</url>
+      
+        <content type="html"><![CDATA[<h1 id="角色死亡布娃娃效果"><a href="#角色死亡布娃娃效果" class="headerlink" title="角色死亡布娃娃效果"></a>角色死亡布娃娃效果</h1><p><strong>核心思路：</strong></p><p><strong>将角色从“动画驱动”瞬间切换为“物理模拟驱动”。关键点在于关闭动画对骨骼的控制权，让物理引擎接管，同时切断摄像机碰撞和角色移动逻辑。</strong>、</p><p><strong>实现步骤（蓝图）：</strong></p><h2 id="创建死亡事件（BP-Character）"><a href="#创建死亡事件（BP-Character）" class="headerlink" title="创建死亡事件（BP_Character）"></a>创建死亡事件（BP_Character）</h2><ul><li><p>在角色蓝图事件图表中新建自定义事件，命名为 Dead。</p></li><li><p>拖出角色的网格体（Mesh）引用，调用 Set Simulate Physics 节点，将 Simulate 勾选为 True。<br>原理：此操作会激活物理资产（Physics Asset），让骨骼按物理规则运动。</p></li></ul><h2 id="触发死亡（BP-Sphere）"><a href="#触发死亡（BP-Sphere）" class="headerlink" title="触发死亡（BP_Sphere）"></a>触发死亡（BP_Sphere）</h2><ul><li><p>在关卡中的机关蓝图（如 BP_Sphere）里，给球形碰撞体添加 On Component Begin Overlap 事件。</p></li><li><p>从 Other Actor 引脚拉出 Cast To BP_Character（类型转换），确保触碰的是角色。</p></li><li><p>转换成功后，调用角色蓝图中的自定义事件 Dead。<br>扩展：可在此处添加伤害计算逻辑，或替换为武器碰撞&#x2F;射线检测来触发。</p></li></ul><h2 id="配置物理资产（Physics-Asset）"><a href="#配置物理资产（Physics-Asset）" class="headerlink" title="配置物理资产（Physics Asset）"></a>配置物理资产（Physics Asset）</h2><ul><li><p>在角色网格体的细节面板中，绑定物理资产（Physics Asset）。</p></li><li><p>将 碰撞预设（Collision Preset） 改为 PhysicsActor，确保物理模拟能正常与环境碰撞。</p></li></ul><h2 id="修复摄像机卡死（关键）"><a href="#修复摄像机卡死（关键）" class="headerlink" title="修复摄像机卡死（关键）"></a>修复摄像机卡死（关键）</h2><ul><li><p>死亡时，摄像机弹簧臂会因物理碰撞被挤压，导致视角卡在地面或穿模。</p></li><li><p>在 Dead 事件中，从弹簧臂（Spring Arm） 拉出 Set Do Collision Test 节点，并取消勾选，关闭碰撞测试。<br>原理：关闭弹簧臂的碰撞探测，摄像机将不再尝试避开障碍物，视角直接跟随角色头部，解决卡顿。</p></li></ul><h2 id="禁用角色移动（避免鬼畜）"><a href="#禁用角色移动（避免鬼畜）" class="headerlink" title="禁用角色移动（避免鬼畜）"></a>禁用角色移动（避免鬼畜）</h2><ul><li><p>在 Dead 事件后，获取 Character Movement 组件。</p></li><li><p>调用 Set Movement Mode，将 New Movement Mode 设为 MOVE_None。<br>原因：若不关闭移动组件，物理模拟时角色仍会尝试行走，导致布料与物理系统“打架”，出现抽搐或瞬移。</p></li></ul><hr><table><thead><tr><th align="center">坑点</th><th align="center">原因</th><th align="center">解决方案</th></tr></thead><tbody><tr><td align="center">角色飞向天际</td><td align="center">物理碰撞通道配置冲突</td><td align="center">检查物理资产中的碰撞预设，建议将“Pawn”通道设为忽略</td></tr><tr><td align="center">布娃娃抖动严重</td><td align="center">根骨骼（Root Bone）参与了物理模拟</td><td align="center">在物理资产中，将根骨骼的Physics Type设为Kinematic（运动学）</td></tr><tr><td align="center">复活后无法移动</td><td align="center">死亡时设的MOVE_None未恢复</td><td align="center">复活时需用Set Movement Mode重置为MOVE_Walking</td></tr><tr><td align="center">销毁后报错</td><td align="center">延迟销毁时，其他蓝图仍引用该角色</td><td align="center">销毁前用DetachFromController解除控制器绑定</td></tr><tr><td align="center">子弹冲击力不足</td><td align="center">未传递速度动量</td><td align="center">在开启物理前，用Set Physics Linear Velocity传入角色速度，或用Add Impulse在命中点加力</td></tr></tbody></table><h1 id="角色死亡后重生逻辑"><a href="#角色死亡后重生逻辑" class="headerlink" title="角色死亡后重生逻辑"></a>角色死亡后重生逻辑</h1><p><strong>核心思路：</strong></p><p><strong>不销毁Actor，而是“重置”它。这样可以保留摄像机、控制器绑定，避免视角丢失和内存碎片。检查点位置用GameMode中的变量存储，便于外部更新。</strong></p><p><strong>实现步骤（蓝图）</strong></p><ol><li>BP_Character：死亡触发重生请求<br>在 Dead 自定义事件末尾（关闭物理、移动、摄像机碰撞后）：</li></ol><p>添加 Delay 节点，设为 2.0 秒（布娃娃倒地时间）。</p><p>延迟后，不要直接销毁Actor，改为调用GameMode的重生逻辑：</p><p>获取 Get Game Mode → Cast To BP_GameMode。</p><p>从 As BP_GameMode 引脚调用自定义事件 RequestRebirth（传入自身引用）。</p><ol start="2"><li>BP_GameMode：管理重生逻辑<br>（1）新建变量存储检查点</li></ol><p>创建变量 SpawnTransform，类型为 Transform。</p><p>在关卡中放置检查点（如蓝图 BP_Checkpoint）时，将自身位置写入此变量。</p><p>（2）添加 RequestRebirth 自定义事件</p><p>输入参数：DeadCharacter（类型为 BP_Character 引用）。</p><p>内部逻辑：</p><p>销毁旧角色：DeadCharacter → Destroy Actor。</p><p>生成新角色：使用 Spawn Actor from Class，Class 选 BP_Character，Transform 用 SpawnTransform 变量。</p><p>控制新角色：</p><p>获取 Get Player Controller → Control（目标为生成的 Pawn）。</p><p>为什么新角色能读取玩家输入？<br>因为 Control 节点将 PlayerController 绑定到了新 Pawn 上。输入事件（如 WASD）是在 Controller 中处理的，绑定后新角色自动响应。</p><ol start="3"><li>检查点更新重生位置（BP_Checkpoint）<br>当玩家触碰检查点时：</li></ol><p>Get Game Mode → Cast To BP_GameMode。</p><p>将自身 Get Actor Transform 赋给 GameMode 的 SpawnTransform 变量。</p><hr><table><thead><tr><th align="center">问题</th><th align="center">解决方案</th><th align="center">原因</th></tr></thead><tbody><tr><td align="center">销毁后视角黑屏或飞到原点</td><td align="center">确保 Control 节点正确执行，且生成的角色 Auto Possess Player 设为 Placed in World</td><td align="center">销毁角色后未重新控制新Pawn</td></tr><tr><td align="center">旧角色仍能听到脚步声</td><td align="center">销毁前调用 Stop All Sounds 和 Disable Input</td><td align="center">未解绑音频组件或Input</td></tr><tr><td align="center">死亡时屏幕UI仍显示血条</td><td align="center">UI应从PlayerController获取角色引用，销毁后自动置空或刷新</td><td align="center">UI绑定到旧角色</td></tr><tr><td align="center">连续死亡导致多个角色</td><td align="center">增加布尔变量 bIsDead，死亡时设为True，重生时重置为False</td><td align="center">延迟期间重复触发死亡</td></tr><tr><td align="center">重生后物理还在</td><td align="center">新生成的角色默认关闭物理，无需额外处理</td><td align="center">未重置物理模拟</td></tr></tbody></table>]]></content>
+      
+      
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>第三人称角色动画</title>
       <link href="/2026/07/13/%E7%AC%AC%E4%B8%89%E4%BA%BA%E7%A7%B0%E8%A7%92%E8%89%B2%E5%8A%A8%E7%94%BB/"/>
       <url>/2026/07/13/%E7%AC%AC%E4%B8%89%E4%BA%BA%E7%A7%B0%E8%A7%92%E8%89%B2%E5%8A%A8%E7%94%BB/</url>
@@ -85,9 +98,9 @@
     
     
     <entry>
-      <title>关于</title>
-      <link href="/about/index.html"/>
-      <url>/about/index.html</url>
+      <title>音乐</title>
+      <link href="/music/index.html"/>
+      <url>/music/index.html</url>
       
         <content type="html"><![CDATA[]]></content>
       
@@ -107,9 +120,9 @@
     
     
     <entry>
-      <title>音乐</title>
-      <link href="/music/index.html"/>
-      <url>/music/index.html</url>
+      <title>关于</title>
+      <link href="/about/index.html"/>
+      <url>/about/index.html</url>
       
         <content type="html"><![CDATA[]]></content>
       

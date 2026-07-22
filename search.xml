@@ -4,6 +4,19 @@
   
     
     <entry>
+      <title>蓝图接口与事件分发器</title>
+      <link href="/2026/07/22/%E8%93%9D%E5%9B%BE%E6%8E%A5%E5%8F%A3%E4%B8%8E%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E5%99%A8/"/>
+      <url>/2026/07/22/%E8%93%9D%E5%9B%BE%E6%8E%A5%E5%8F%A3%E4%B8%8E%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E5%99%A8/</url>
+      
+        <content type="html"><![CDATA[<h1 id="蓝图接口："><a href="#蓝图接口：" class="headerlink" title="蓝图接口："></a>蓝图接口：</h1><p><strong>蓝图接口是虚幻引擎蓝图通信中非常重要且优雅的一环。它解决了一个核心痛点：如何让不同类型的对象，对同一个指令做出各自不同的反应，而发送指令的一方无需关心对方具体是谁。</strong></p><h2 id="核心概念：什么是蓝图接口？"><a href="#核心概念：什么是蓝图接口？" class="headerlink" title="核心概念：什么是蓝图接口？"></a>核心概念：什么是蓝图接口？</h2><p>简单说，蓝图接口是一份函数声明列表，只定义函数的名称、输入和输出参数，没有任何函数体实现。</p><p>你可以把它理解为一个“合同”或“协议”：</p><p>接口本身说：“任何签署这个合同的类，都必须承诺可以实现一个叫‘打开’的函数。”</p><p>实现接口的类说：“我签署合同，并给出我自己的‘打开’方式。比如，门会旋转，宝箱会播放动画，灯会发光。”</p><p>它的关键特性在于，调用方无需知道对象的具体类型，只要知道它实现了某个接口，就能直接调用该接口的函数，并触发对象自己独特的实现。</p><h2 id="为什么用它？两大核心作用："><a href="#为什么用它？两大核心作用：" class="headerlink" title="为什么用它？两大核心作用："></a>为什么用它？两大核心作用：</h2><ol><li><p>解耦类型，实现通用交互</p><p>这是最主要的作用。比如“可交互”系统，玩家按下E键时，角色向前发射一条射线，检测到的物体可能千差万别。如果不使用接口，你可能会这么写：</p></li></ol><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">// 伪代码：糟糕的写法</span><br><span class="line">如果 (被击中物体 是 门) &#123;</span><br><span class="line">调用“开门”函数</span><br><span class="line">&#125; 否则 如果 (被击中物体 是 宝箱) &#123;</span><br><span class="line">调用“打开宝箱”函数</span><br><span class="line">&#125; 否则 如果 (被击中物体 是 灯) &#123;</span><br><span class="line">调用“开关灯”函数</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>这样系统会变得极度臃肿，每加一个新物品都要改角色脚本。使用接口后，代码会变得非常干净：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// 优雅的写法：角色只需发送接口消息</span><br><span class="line">向 (被击中物体) 发送 接口消息 “交互”</span><br></pre></td></tr></table></figure><p>此时，无论被击中的是什么，只要它实现了“交互”接口，就会自动执行自己的逻辑。</p><ol start="2"><li><p>构建松耦合的系统，便于维护和多人协作</p><p>使用接口后，玩家角色和所有可交互对象之间没有强依赖关系。为游戏添加一种全新的可交互石头，程序员只需给石头实现这个接口，完全无需修改玩家角色的任何一行代码，大大降低了出错和冲突的风险。</p></li></ol><h2 id="高级用法和常见疑问"><a href="#高级用法和常见疑问" class="headerlink" title="高级用法和常见疑问"></a>高级用法和常见疑问</h2><p>检查是否实现接口：</p><p>调用前如果确实需要判断，可以使用节点 是否实现接口(Does Implement Interface)，返回布尔值。这在UI交互提示中很有用：只有实现了接口的物体才显示“按E交互”。</p><p>在关卡蓝图或组件中调用：</p><p>接口调用完全不限位置。你可以在关卡蓝图里，获取对某个Actor的引用后，直接向其发送接口消息。</p><p>C++ 和蓝图的桥梁：</p><p>在C++中用 UINTERFACE 和 IINTERFACE 宏定义的接口，在蓝图中会被自动识别为蓝图接口，可以直接实现。</p><p>接口之间可以继承：</p><p>你可以创建一个 BPI_Damageable 的通用伤害接口，再创建一个 BPI_BossDamageable 接口，并让它继承自 BPI_Damageable，以增加Boss独有的阶段切换函数。继承关系在蓝图接口的“类设置”里设置。</p><h1 id="事件分发器："><a href="#事件分发器：" class="headerlink" title="事件分发器："></a>事件分发器：</h1><p><strong>事件分发器是蓝图通信中与接口互补的另一大支柱。如果说接口是“我对你发起的一次命令和请求”，那么事件分发器就是“我向大家宣布一件事发生了，谁关心谁就来听”。</strong></p><h2 id="核心概念：一个广播站"><a href="#核心概念：一个广播站" class="headerlink" title="核心概念：一个广播站"></a>核心概念：一个广播站</h2><p>事件分发器就像广播电台：</p><p>电台本身（分发器）：不知道也不在乎谁在收听。</p><p>广播行为（调用分发器）：信号发出，只管播，不管后续。</p><p>收音机（监听者）：必须主动调谐到该频率，才能收到广播并响应。</p><p>在蓝图里，分发器定义在某个对象内部，它就是一个可以被外部绑定的“插座”。当这个对象“调用”分发器时，所有曾经绑定过这个插座的监听者都会收到通知，并执行各自绑定的事件。</p><h2 id="核心特征与接口的对比"><a href="#核心特征与接口的对比" class="headerlink" title="核心特征与接口的对比"></a>核心特征与接口的对比</h2><table><thead><tr><th align="center">特征</th><th align="center">事件分发器</th><th align="center">蓝图接口</th></tr></thead><tbody><tr><td align="center">通信方向</td><td align="center">一对多广播，耦合度极低。</td><td align="center">一对一命令，发送给特定目标。</td></tr><tr><td align="center">是否有返回值</td><td align="center">无，纯粹的“告知”，不期待回应。</td><td align="center">可有，通过输出参数获取操作结果。</td></tr><tr><td align="center">典型场景</td><td align="center">“某件事发生了”的通知。</td><td align="center">“执行某个动作”的命令。</td></tr><tr><td align="center">代码依赖</td><td align="center">监听方需持有分发器对象本身的引用才能绑定。</td><td align="center">调用方只需持有目标Actor，无需知道其类型。</td></tr><tr><td align="center">类比</td><td align="center">消防警报：一拉响，所有人听见就疏散。</td><td align="center">门禁系统：对着特定门刷卡，门给你开，并反馈是否成功。</td></tr></tbody></table><h2 id="关键注意事项与最佳实践"><a href="#关键注意事项与最佳实践" class="headerlink" title="关键注意事项与最佳实践"></a>关键注意事项与最佳实践</h2><p>何时解绑：一定要在监听器被销毁前解绑！ 否则，广播源调用分发器时，会试图向一个已销毁的对象发消息，导致报错。监听者（如一个Widget）应在Event Destruct里，用“解除绑定事件”节点把自己解绑。</p><p>跨蓝图传递引用：这是新手最常卡住的地方。监听者如何拿到广播源的引用？</p><p>GameMode&#x2F;GameState&#x2F;PlayerController：使用Get Game Mode等节点直接获取。</p><p>关卡单例：比如广播源是关卡中的一个管理器，可以在关卡蓝图中通过Event BeginPlay将其引用保存在一个变量里，再让其他蓝图通过该变量访问。</p><p>动态生成：物体生成时，用生成它的工厂或角色来发起绑定。</p><h2 id="典型应用场景"><a href="#典型应用场景" class="headerlink" title="典型应用场景"></a>典型应用场景</h2><p>UI更新：玩家血量、弹药、分数变化时，由角色或游戏模式广播，所有可见的UI控件监听并刷新。</p><p>全局游戏状态：游戏暂停、结束、开始。游戏模式一次广播，所有需要响应的Actor（敌人停止AI、音乐切换、菜单弹出）各自响应。</p><p>成就与统计系统：一个“玩家击杀敌人”的分发器。成就系统和数据统计系统各自独立监听，主战斗逻辑无需知晓它们的存在，彻底解耦。</p>]]></content>
+      
+      
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>2026.7.17笔记</title>
       <link href="/2026/07/17/2026.7.17%E7%AC%94%E8%AE%B0/"/>
       <url>/2026/07/17/2026.7.17%E7%AC%94%E8%AE%B0/</url>
@@ -98,17 +111,6 @@
     
     
     <entry>
-      <title>音乐</title>
-      <link href="/music/index.html"/>
-      <url>/music/index.html</url>
-      
-        <content type="html"><![CDATA[]]></content>
-      
-    </entry>
-    
-    
-    
-    <entry>
       <title>电影</title>
       <link href="/movies/index.html"/>
       <url>/movies/index.html</url>
@@ -123,6 +125,17 @@
       <title>关于</title>
       <link href="/about/index.html"/>
       <url>/about/index.html</url>
+      
+        <content type="html"><![CDATA[]]></content>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>音乐</title>
+      <link href="/music/index.html"/>
+      <url>/music/index.html</url>
       
         <content type="html"><![CDATA[]]></content>
       

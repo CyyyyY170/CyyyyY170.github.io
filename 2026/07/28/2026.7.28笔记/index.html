@@ -1,0 +1,348 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>2026.7.28笔记 | CyyyyY的个人博客</title><meta name="author" content="CyyyyY,3318055170@qq.com"><meta name="copyright" content="CyyyyY"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="State Tree State Tree 的层级结构：Root → 守卫检查（Phase&#x2F;Stagger&#x2F;Death）→ 战斗行为（TacticalPause → StanceSwitch → AttackExecution → DefaultMovement），比 Behavior Tree 更接近状态机思维  State 与 Task 是分离的——画了树 ≠ 挂了任务，每">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2026.7.28笔记">
+<meta property="og:url" content="https://cyyyyy170.github.io/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="CyyyyY的个人博客">
+<meta property="og:description" content="State Tree State Tree 的层级结构：Root → 守卫检查（Phase&#x2F;Stagger&#x2F;Death）→ 战斗行为（TacticalPause → StanceSwitch → AttackExecution → DefaultMovement），比 Behavior Tree 更接近状态机思维  State 与 Task 是分离的——画了树 ≠ 挂了任务，每">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cyyyyy170.github.io/img/blue%20sky.png">
+<meta property="article:published_time" content="2026-07-28T05:57:57.191Z">
+<meta property="article:modified_time" content="2026-07-28T06:38:56.758Z">
+<meta property="article:author" content="CyyyyY">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cyyyyy170.github.io/img/blue%20sky.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "2026.7.28笔记",
+  "url": "https://cyyyyy170.github.io/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/",
+  "image": "https://cyyyyy170.github.io/img/blue%20sky.png",
+  "datePublished": "2026-07-28T05:57:57.191Z",
+  "dateModified": "2026-07-28T06:38:56.758Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "CyyyyY",
+      "url": "https://cyyyyy170.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://cyyyyy170.github.io/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":230,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '2026.7.28笔记',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/reze.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/myface.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">9</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/blue%20sky.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">CyyyyY的个人博客</span></a><a class="nav-page-title" href="/"><span class="site-name">2026.7.28笔记</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">2026.7.28笔记</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-07-28T05:57:57.191Z" title="发表于 2026-07-28 13:57:57">2026-07-28</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-28T06:38:56.758Z" title="更新于 2026-07-28 14:38:56">2026-07-28</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>5分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><div id="post-outdate-notice" data="{&quot;limitDay&quot;:365,&quot;messagePrev&quot;:&quot;已经过了&quot;,&quot;messageNext&quot;:&quot;天自上次更新，文章内容可能已经过期。&quot;,&quot;postUpdate&quot;:&quot;2026-07-28 14:38:56&quot;}" hidden></div><h1 id="State-Tree"><a href="#State-Tree" class="headerlink" title="State Tree"></a>State Tree</h1><ul>
+<li><p>State Tree 的层级结构：Root → 守卫检查（Phase&#x2F;Stagger&#x2F;Death）→ 战斗行为（TacticalPause → StanceSwitch → AttackExecution → DefaultMovement），比 Behavior Tree 更接近状态机思维</p>
+</li>
+<li><p>State 与 Task 是分离的——画了树 ≠ 挂了任务，每个 State 的 Details 面板必须显式添加 Task</p>
+</li>
+<li><p>Transition 条件可能静默卡死整棵树——State Tree 是线性流转，前面的 Transition 返回<br>FALSE，后面全部不可达</p>
+</li>
+<li><p>STT（StateTreeTask）每次重入都新建实例——实例变量无法跨循环保持状态，这是和 Behavior Tree<br>的关键差异</p>
+</li>
+<li><p>State Tree 安全限制：禁止直接引用关卡 Actor，必须用 GetAllActorsOfClass 或 EQS 绕行</p>
+</li>
+</ul>
+<h1 id="数据驱动战斗设计"><a href="#数据驱动战斗设计" class="headerlink" title="数据驱动战斗设计"></a>数据驱动战斗设计</h1><p><strong>Boss 系统采用完全数据驱动的架构。每个攻击、每个姿态都是独立的 DataAsset。</strong></p>
+<p>DA_BossStance（姿态配置）<br>├── AvailableAttacks: Array<DA_BossAttack><br>├── MoveSpeed, MinStanceDuration<br>└── ComboChains</p>
+<p>DA_BossAttack（攻击配置）<br>├── AttackMontage, Damage, Range<br>├── MinUseDistance &#x2F; MaxUseDistance<br>└── Cooldown, VFX&#x2F;SFX 引用</p>
+<ul>
+<li><p>DataAsset 比 DataTable更适合结构化配置——支持嵌套引用（姿态引用攻击列表），强类型检查，可在编辑器中直接拖拽赋值</p>
+</li>
+<li><p>Component 负责逻辑，DataAsset 负责数据——AttackSelector 组件持有算法，CurrentStanceData 提供参数</p>
+</li>
+<li><p>AttackSelector 的选择算法：遍历 CurrentStance.AvailableAttacks → 检查玩家距离 ∈ [MinUseDistance, MaxUseDistance] → 返回匹配攻击</p>
+</li>
+</ul>
+<h1 id="AI-移动系统-—-NavMesh-EQS-MoveTo-的三角关系"><a href="#AI-移动系统-—-NavMesh-EQS-MoveTo-的三角关系" class="headerlink" title="AI 移动系统 — NavMesh + EQS + MoveTo 的三角关系"></a>AI 移动系统 — NavMesh + EQS + MoveTo 的三角关系</h1><ul>
+<li><p>AI MoveTo（GameplayTask） → 在 State Tree 上下文中无声失败</p>
+</li>
+<li><p>AIController.MoveToActor → then 引脚在请求发出后立刻触发，不是移动完成</p>
+</li>
+<li><p>Branch + bAlreadyMoving 护卫 → STT 每次重入重置变量，护卫无效</p>
+</li>
+<li><p>ReceiveTick + AddMovementInput → 蓝图编译报错”此蓝图并非 Pawn”</p>
+</li>
+</ul>
+<h2 id="关键认知："><a href="#关键认知：" class="headerlink" title="关键认知："></a>关键认知：</h2><ul>
+<li><p>StateTreeMoveToTask 需要 EQS + MoveTo 双 Task 配合——参考敌人的 ST_CombatEnemy 模式：RunEnvQueryTask 提供目标位置 + MoveToTask 执行移动</p>
+</li>
+<li><p>EQS 绑定链路复杂：EQS Result → Parameter → MoveTo.Destination，在蓝图界面操作容易断链</p>
+</li>
+<li><p>移动逻辑可能不适合放在 State Tree 的子链里——考虑放到 DefaultMovement 作为”始终运行”的基础状态</p>
+</li>
+</ul>
+<h1 id="UE5-AI-调试-State-Tree-逐层验证法"><a href="#UE5-AI-调试-State-Tree-逐层验证法" class="headerlink" title="UE5 AI 调试: State Tree 逐层验证法"></a>UE5 AI 调试: State Tree 逐层验证法</h1><h2 id="为什么-State-Tree-调试这么难？"><a href="#为什么-State-Tree-调试这么难？" class="headerlink" title="为什么 State Tree 调试这么难？"></a>为什么 State Tree 调试这么难？</h2><ol>
+<li><p><strong>State Tree没有Behavior Tree那样的可视化运行时调试器。</strong> 你无法在编辑器中看到当前哪个State在跑、哪个Task在执行——至少在写这篇文章时（UE5.8），State Tree Debugger 的功能还非常有限。</p>
+</li>
+<li><p><strong>故障是静默的。</strong> 一个 Transition条件返回FALSE不会报错不会警告不会闪红——后面的State就是永远不会执行。你甚至不知道问题出在”条件判断”还是”State Tree 根本没启动”。</p>
+</li>
+<li><p><strong>State Tree的架构和Behavior Tree完全不同。</strong> 抱着Behavior Tree的直觉来用State Tree，会被它的”线性流转 + 每次重入新建实例”模型反复背刺。</p>
+</li>
+</ol>
+<h2 id="State-Tree-是线性流，不是并行树"><a href="#State-Tree-是线性流，不是并行树" class="headerlink" title="State Tree 是线性流，不是并行树"></a>State Tree 是线性流，不是并行树</h2><p>Behavior Tree 的模型是”从根往叶子并行评估，多个分支可以同时跑”。State Tree 不是这样——它更接近<strong>层级状态机</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Root</span><br><span class="line"> └── State A（激活中...）</span><br><span class="line">        ├── Child A1 → 完成 → 流转到 Child A2</span><br><span class="line">        └── Child A2 → 完成 → 流转到 Child A3</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>一个时刻只有<strong>一条路径</strong>上的 State 是激活的。前面的 State 卡住 &#x3D; 后面全部不可达。</p>
+<h2 id="Transition-条件控制一切流转"><a href="#Transition-条件控制一切流转" class="headerlink" title="Transition 条件控制一切流转"></a>Transition 条件控制一切流转</h2><p>State Tree 的流转由 Transition 上的 Condition（STC，StateTreeCondition）控制：</p>
+<ul>
+<li><p>STC 返回 <strong>TRUE</strong> → Transition 触发 → 进入下一个 State</p>
+</li>
+<li><p>STC 返回 <strong>FALSE</strong> → Transition 不触发 → <strong>当前 State 永远不退出</strong>（除非 State 自己有退出逻辑）</p>
+</li>
+</ul>
+<p>关键点：<strong>如果State没有挂Task，它永远不会”完成”，Transition也永远不会被评估。</strong> 除非把Transition的触发模式设为<code>OnTick</code>（每帧检查条件）。</p>
+<h2 id="逐层验证法：7-步定位任何问题"><a href="#逐层验证法：7-步定位任何问题" class="headerlink" title="逐层验证法：7 步定位任何问题"></a>逐层验证法：7 步定位任何问题</h2><p>这套流程的核心思想是：<strong>从物理层往逻辑层逐层验证，每加一层就测一次。</strong> 永远不要一次性把所有State、Task、Condition 配满，出问题了你根本不知道卡在哪一层。</p>
+<h3 id="1：确认角色生成"><a href="#1：确认角色生成" class="headerlink" title="1：确认角色生成"></a>1：确认角色生成</h3><p>在 EventGraph 的 <code>BeginPlay</code> 后面拖一个 <code>Print String</code>，内容写 “Boss Alive”。</p>
+<h3 id="2：确认AI控制器启动"><a href="#2：确认AI控制器启动" class="headerlink" title="2：确认AI控制器启动"></a>2：确认AI控制器启动</h3><p>在 <code>BeginPlay</code> 加 Print String “AI Start”。</p>
+<p><strong>常见坑：AI 控制器缺少 <code>StateTreeAI</code> 组件。</strong> 我是从已有的敌人 AI 控制器（<code>BP_CombatAIController</code>）复制结构创建 Boss 控制器的，但漏掉了这个关键组件——State Tree 完全不会启动，且没有任何报错。</p>
+<h3 id="3：确认-State-Tree-启动了"><a href="#3：确认-State-Tree-启动了" class="headerlink" title="3：确认 State Tree 启动了"></a>3：确认 State Tree 启动了</h3><p>打开 State Tree 资产，找到根节点（或第一层 State），在 Tasks 里挂一个最简单的STT。如果没有现成的简单 STT，可以创建一个只做一件事的：<code>EnterState → Print String(&quot;Tree Running&quot;) → FinishTask(true)</code>。</p>
+<h3 id="4：逐层加-Transition"><a href="#4：逐层加-Transition" class="headerlink" title="4：逐层加 Transition"></a>4：逐层加 Transition</h3><p>State Tree 里每一个 Transition 上的 STC 条件都可能静默返回 FALSE，导致后面的 State 永远无法到达。所以你必须<strong>一层一层加</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">策略：从简到繁</span><br><span class="line"> 第一轮：所有 Transition 用无条件 GotoState（不挂任何 STC）</span><br><span class="line">     → 验证整棵树的 State 流转是否通畅</span><br><span class="line"></span><br><span class="line">   第二轮：逐一替换为 STC 条件</span><br><span class="line">     → 每替换一个就 Play 测试一次</span><br><span class="line">     → 哪个替换后流转卡住了，问题就在那个 STC</span><br></pre></td></tr></table></figure>
+
+<p>先用无条件 Transition 跑通整条链，确认所有 State 都能被到达。然后在 <code>State_CombatBehavior</code>里挂一个 Print String 的任务，验证”从根到叶子”的路径是通的。</p>
+<h3 id="5：验证每个-STT（Task）的逻辑"><a href="#5：验证每个-STT（Task）的逻辑" class="headerlink" title="5：验证每个 STT（Task）的逻辑"></a>5：验证每个 STT（Task）的逻辑</h3><p>Print String 必须串在 exec 链中。</p>
+<h3 id="6：修复-STC（Condition）逻辑"><a href="#6：修复-STC（Condition）逻辑" class="headerlink" title="6：修复 STC（Condition）逻辑"></a>6：修复 STC（Condition）逻辑</h3><p><strong>最常见的 STC Bug：</strong></p>
+<table>
+<thead>
+<tr>
+<th align="center">Bug</th>
+<th align="center">现象</th>
+<th align="center">修复</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><code>GetAllActorsOfClass</code> 没连 exec</td>
+<td align="center">STC 永远返回默认值</td>
+<td align="center">FunctionEntry → GetAllActorsOfClass exec 引脚</td>
+</tr>
+<tr>
+<td align="center"><code>VariableGet self</code> 悬空</td>
+<td align="center">读取不到变量值</td>
+<td align="center">从 GetAllActorsOfClass 的 Out Actors Get[0] 拖线连到 VariableGet 的 self</td>
+</tr>
+<tr>
+<td align="center"><code>Branch</code> True&#x2F;False 连反</td>
+<td align="center">条件逻辑反转</td>
+<td align="center">检查 True → Return True &#x2F; False → Return False</td>
+</tr>
+<tr>
+<td align="center"><code>NOT Boolean</code> 位置错误</td>
+<td align="center">Invert 逻辑搞反</td>
+<td align="center">在比较结果后加 NOT，或者在 State Tree Transition 中勾选 Invert</td>
+</tr>
+<tr>
+<td align="center">变量没有勾选 <code>Instance Editable</code></td>
+<td align="center">State Tree 里看不到该变量的设置</td>
+<td align="center">在蓝图变量详情里勾选Instance Editable</td>
+</tr>
+<tr>
+<td align="center"><code>GetAllActorsOfClass</code> 拿到的 Actor 还没初始化</td>
+<td align="center">属性为默认值</td>
+<td align="center">加 IsValid 守卫，无效时 Return False</td>
+</tr>
+</tbody></table>
+<h3 id="7：清理编译警告"><a href="#7：清理编译警告" class="headerlink" title="7：清理编译警告"></a>7：清理编译警告</h3><p>检查 Output Log 里的警告。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://cyyyyy170.github.io">CyyyyY</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://cyyyyy170.github.io/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/">https://cyyyyy170.github.io/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://cyyyyy170.github.io" target="_blank">CyyyyY的个人博客</a>！</span></div></div><div class="tag_share"><div class="post-share"></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/07/22/%E8%93%9D%E5%9B%BE%E6%8E%A5%E5%8F%A3%E4%B8%8E%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E5%99%A8/" title="蓝图接口与事件分发器"><img class="cover" src="/img/grand%20blue.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">蓝图接口与事件分发器</div></div><div class="info-2"><div class="info-item-1">蓝图接口：蓝图接口是虚幻引擎蓝图通信中非常重要且优雅的一环。它解决了一个核心痛点：如何让不同类型的对象，对同一个指令做出各自不同的反应，而发送指令的一方无需关心对方具体是谁。 核心概念：什么是蓝图接口？简单说，蓝图接口是一份函数声明列表，只定义函数的名称、输入和输出参数，没有任何函数体实现。 你可以把它理解为一个“合同”或“协议”： 接口本身说：“任何签署这个合同的类，都必须承诺可以实现一个叫‘打开’的函数。” 实现接口的类说：“我签署合同，并给出我自己的‘打开’方式。比如，门会旋转，宝箱会播放动画，灯会发光。” 它的关键特性在于，调用方无需知道对象的具体类型，只要知道它实现了某个接口，就能直接调用该接口的函数，并触发对象自己独特的实现。 为什么用它？两大核心作用： 解耦类型，实现通用交互 这是最主要的作用。比如“可交互”系统，玩家按下E键时，角色向前发射一条射线，检测到的物体可能千差万别。如果不使用接口，你可能会这么写：   12345678// 伪代码：糟糕的写法如果 (被击中物体 是 门) &#123;调用“开门”函数&#125; 否则 如果 (被击中物体 是 宝箱) &#...</div></div></div></a></nav><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="giscus-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/myface.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">CyyyyY</div><div class="author-info-description">致力于所爱</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">9</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/CyyyyY170"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/CyyyyY170" target="_blank" title="Github"><i class="fab fa-github" style="color: #00AEEC;"></i></a><a class="social-icon" href="https://steamcommunity.com/profiles/76561199184466419/" target="_blank" title="Steam"><i class="fab fa-steam" style="color: #00AEEC;"></i></a><a class="social-icon" href="https://space.bilibili.com/388242453" target="_blank" title="BiliBili"><i class="fab fa-bilibili" style="color: #00AEEC;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">一个彩笔的学习分享</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#State-Tree"><span class="toc-number">1.</span> <span class="toc-text">State Tree</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E9%A9%B1%E5%8A%A8%E6%88%98%E6%96%97%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.</span> <span class="toc-text">数据驱动战斗设计</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#AI-%E7%A7%BB%E5%8A%A8%E7%B3%BB%E7%BB%9F-%E2%80%94-NavMesh-EQS-MoveTo-%E7%9A%84%E4%B8%89%E8%A7%92%E5%85%B3%E7%B3%BB"><span class="toc-number">3.</span> <span class="toc-text">AI 移动系统 — NavMesh + EQS + MoveTo 的三角关系</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E8%AE%A4%E7%9F%A5%EF%BC%9A"><span class="toc-number">3.1.</span> <span class="toc-text">关键认知：</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#UE5-AI-%E8%B0%83%E8%AF%95-State-Tree-%E9%80%90%E5%B1%82%E9%AA%8C%E8%AF%81%E6%B3%95"><span class="toc-number">4.</span> <span class="toc-text">UE5 AI 调试: State Tree 逐层验证法</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-State-Tree-%E8%B0%83%E8%AF%95%E8%BF%99%E4%B9%88%E9%9A%BE%EF%BC%9F"><span class="toc-number">4.1.</span> <span class="toc-text">为什么 State Tree 调试这么难？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#State-Tree-%E6%98%AF%E7%BA%BF%E6%80%A7%E6%B5%81%EF%BC%8C%E4%B8%8D%E6%98%AF%E5%B9%B6%E8%A1%8C%E6%A0%91"><span class="toc-number">4.2.</span> <span class="toc-text">State Tree 是线性流，不是并行树</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Transition-%E6%9D%A1%E4%BB%B6%E6%8E%A7%E5%88%B6%E4%B8%80%E5%88%87%E6%B5%81%E8%BD%AC"><span class="toc-number">4.3.</span> <span class="toc-text">Transition 条件控制一切流转</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%90%E5%B1%82%E9%AA%8C%E8%AF%81%E6%B3%95%EF%BC%9A7-%E6%AD%A5%E5%AE%9A%E4%BD%8D%E4%BB%BB%E4%BD%95%E9%97%AE%E9%A2%98"><span class="toc-number">4.4.</span> <span class="toc-text">逐层验证法：7 步定位任何问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%EF%BC%9A%E7%A1%AE%E8%AE%A4%E8%A7%92%E8%89%B2%E7%94%9F%E6%88%90"><span class="toc-number">4.4.1.</span> <span class="toc-text">1：确认角色生成</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2%EF%BC%9A%E7%A1%AE%E8%AE%A4AI%E6%8E%A7%E5%88%B6%E5%99%A8%E5%90%AF%E5%8A%A8"><span class="toc-number">4.4.2.</span> <span class="toc-text">2：确认AI控制器启动</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3%EF%BC%9A%E7%A1%AE%E8%AE%A4-State-Tree-%E5%90%AF%E5%8A%A8%E4%BA%86"><span class="toc-number">4.4.3.</span> <span class="toc-text">3：确认 State Tree 启动了</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4%EF%BC%9A%E9%80%90%E5%B1%82%E5%8A%A0-Transition"><span class="toc-number">4.4.4.</span> <span class="toc-text">4：逐层加 Transition</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5%EF%BC%9A%E9%AA%8C%E8%AF%81%E6%AF%8F%E4%B8%AA-STT%EF%BC%88Task%EF%BC%89%E7%9A%84%E9%80%BB%E8%BE%91"><span class="toc-number">4.4.5.</span> <span class="toc-text">5：验证每个 STT（Task）的逻辑</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6%EF%BC%9A%E4%BF%AE%E5%A4%8D-STC%EF%BC%88Condition%EF%BC%89%E9%80%BB%E8%BE%91"><span class="toc-number">4.4.6.</span> <span class="toc-text">6：修复 STC（Condition）逻辑</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7%EF%BC%9A%E6%B8%85%E7%90%86%E7%BC%96%E8%AF%91%E8%AD%A6%E5%91%8A"><span class="toc-number">4.4.7.</span> <span class="toc-text">7：清理编译警告</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/" title="2026.7.28笔记"><img src="/img/blue%20sky.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2026.7.28笔记"/></a><div class="content"><a class="title" href="/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/" title="2026.7.28笔记">2026.7.28笔记</a><time datetime="2026-07-28T05:57:57.191Z" title="发表于 2026-07-28 13:57:57">2026-07-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/22/%E8%93%9D%E5%9B%BE%E6%8E%A5%E5%8F%A3%E4%B8%8E%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E5%99%A8/" title="蓝图接口与事件分发器"><img src="/img/grand%20blue.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="蓝图接口与事件分发器"/></a><div class="content"><a class="title" href="/2026/07/22/%E8%93%9D%E5%9B%BE%E6%8E%A5%E5%8F%A3%E4%B8%8E%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E5%99%A8/" title="蓝图接口与事件分发器">蓝图接口与事件分发器</a><time datetime="2026-07-22T06:04:11.379Z" title="发表于 2026-07-22 14:04:11">2026-07-22</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/17/2026.7.17%E7%AC%94%E8%AE%B0/" title="2026.7.17笔记"><img src="/img/qisha.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2026.7.17笔记"/></a><div class="content"><a class="title" href="/2026/07/17/2026.7.17%E7%AC%94%E8%AE%B0/" title="2026.7.17笔记">2026.7.17笔记</a><time datetime="2026-07-17T06:17:15.802Z" title="发表于 2026-07-17 14:17:15">2026-07-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/13/%E7%AC%AC%E4%B8%89%E4%BA%BA%E7%A7%B0%E8%A7%92%E8%89%B2%E5%8A%A8%E7%94%BB/" title="第三人称角色动画"><img src="/img/power.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="第三人称角色动画"/></a><div class="content"><a class="title" href="/2026/07/13/%E7%AC%AC%E4%B8%89%E4%BA%BA%E7%A7%B0%E8%A7%92%E8%89%B2%E5%8A%A8%E7%94%BB/" title="第三人称角色动画">第三人称角色动画</a><time datetime="2026-07-13T07:13:23.705Z" title="发表于 2026-07-13 15:13:23">2026-07-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/11/%E5%B8%B8%E7%94%A8%E6%B5%81%E7%A8%8B%E6%8E%A7%E5%88%B6%E8%8A%82%E7%82%B9/" title="常用流程控制节点"><img src="/img/tayama.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="常用流程控制节点"/></a><div class="content"><a class="title" href="/2026/07/11/%E5%B8%B8%E7%94%A8%E6%B5%81%E7%A8%8B%E6%8E%A7%E5%88%B6%E8%8A%82%E7%82%B9/" title="常用流程控制节点">常用流程控制节点</a><time datetime="2026-07-11T08:26:06.025Z" title="发表于 2026-07-11 16:26:06">2026-07-11</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2026 By CyyyyY</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = null
+
+  const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
+
+  const createScriptElement = config => {
+    const ele = document.createElement('script')
+    Object.entries(config).forEach(([key, value]) => {
+      ele.setAttribute(key, value)
+    })
+    return ele
+  }
+
+  const loadGiscus = (el = document, key) => {
+    const mappingConfig = isShuoshuo
+      ? { 'data-mapping': 'specific', 'data-term': key }
+      : { 'data-mapping': (option && option['data-mapping']) || 'pathname' }
+
+    const giscusConfig = {
+      src: 'https://giscus.app/client.js',
+      'data-repo': 'CyyyyY170/CyyyyY170.github.io',
+      'data-repo-id': 'R_kgDOTP0qWA',
+      'data-category-id': 'DIC_kwDOTP0qWM4DBKfL',
+      'data-theme': getGiscusTheme(document.documentElement.getAttribute('data-theme')),
+      'data-reactions-enabled': '1',
+      crossorigin: 'anonymous',
+      async: true,
+      ...option,
+      ...mappingConfig
+    }
+
+    const scriptElement = createScriptElement(giscusConfig)
+
+    el.querySelector('#giscus-wrap').appendChild(scriptElement)
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGiscus = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+  }
+
+  const changeGiscusTheme = theme => {
+    const iframe = document.querySelector('#giscus-wrap iframe')
+    if (iframe) {
+      const message = {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(theme)
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(message, 'https://giscus.app')
+    }
+  }
+
+  btf.addGlobalFn('themeChange', changeGiscusTheme, 'giscus')
+
+  if (isShuoshuo) {
+    'Giscus' === 'Giscus'
+      ? window.shuoshuoComment = { loadComment: loadGiscus }
+      : window.loadOtherComment = loadGiscus
+    return
+  }
+
+  if ('Giscus' === 'Giscus' || !true) {
+    if (true) btf.loadComment(document.getElementById('giscus-wrap'), loadGiscus)
+    else loadGiscus()
+  } else {
+    window.loadOtherComment = loadGiscus
+  }
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

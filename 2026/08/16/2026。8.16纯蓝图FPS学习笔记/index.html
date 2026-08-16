@@ -1,0 +1,367 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>2026.8.16纯蓝图FPS学习笔记 | CyyyyY的个人博客</title><meta name="author" content="CyyyyY,3318055170@qq.com"><meta name="copyright" content="CyyyyY"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="UE5 纯蓝图 FPS 实战笔记:命中判定、AI 追击与带冲量的布娃娃死亡 一个用 UE 5.8 纯蓝图(零 C++)完成的 FPS 练习项目。本文梳理三个核心系统的实现思路:武器命中判定、Whisper AI 追击,以及带冲量的布娃娃死亡效果。文中的蓝图节点名均可在编辑器里直接搜索复现。  一、先看整体架构项目逻辑全部放在 Content&#x2F;Code&#x2F; 下,类关系非常简单: 1234BP_FPSP">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2026.8.16纯蓝图FPS学习笔记">
+<meta property="og:url" content="https://cyyyyy170.github.io/2026/08/16/2026%E3%80%828.16%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="CyyyyY的个人博客">
+<meta property="og:description" content="UE5 纯蓝图 FPS 实战笔记:命中判定、AI 追击与带冲量的布娃娃死亡 一个用 UE 5.8 纯蓝图(零 C++)完成的 FPS 练习项目。本文梳理三个核心系统的实现思路:武器命中判定、Whisper AI 追击,以及带冲量的布娃娃死亡效果。文中的蓝图节点名均可在编辑器里直接搜索复现。  一、先看整体架构项目逻辑全部放在 Content&#x2F;Code&#x2F; 下,类关系非常简单: 1234BP_FPSP">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cyyyyy170.github.io/img/Lucy.png">
+<meta property="article:published_time" content="2026-08-16T06:00:08.687Z">
+<meta property="article:modified_time" content="2026-08-16T06:07:16.313Z">
+<meta property="article:author" content="CyyyyY">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cyyyyy170.github.io/img/Lucy.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "2026.8.16纯蓝图FPS学习笔记",
+  "url": "https://cyyyyy170.github.io/2026/08/16/2026%E3%80%828.16%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/",
+  "image": "https://cyyyyy170.github.io/img/Lucy.png",
+  "datePublished": "2026-08-16T06:00:08.687Z",
+  "dateModified": "2026-08-16T06:07:16.313Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "CyyyyY",
+      "url": "https://cyyyyy170.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://cyyyyy170.github.io/2026/08/16/2026%E3%80%828.16%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":230,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '2026.8.16纯蓝图FPS学习笔记',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/reze.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/myface.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">10</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/Lucy.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">CyyyyY的个人博客</span></a><a class="nav-page-title" href="/"><span class="site-name">2026.8.16纯蓝图FPS学习笔记</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">2026.8.16纯蓝图FPS学习笔记</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-08-16T06:00:08.687Z" title="发表于 2026-08-16 14:00:08">2026-08-16</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-08-16T06:07:16.313Z" title="更新于 2026-08-16 14:07:16">2026-08-16</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">2.7k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>8分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><div id="post-outdate-notice" data="{&quot;limitDay&quot;:365,&quot;messagePrev&quot;:&quot;已经过了&quot;,&quot;messageNext&quot;:&quot;天自上次更新，文章内容可能已经过期。&quot;,&quot;postUpdate&quot;:&quot;2026-08-16 14:07:16&quot;}" hidden></div><h1 id="UE5-纯蓝图-FPS-实战笔记-命中判定、AI-追击与带冲量的布娃娃死亡"><a href="#UE5-纯蓝图-FPS-实战笔记-命中判定、AI-追击与带冲量的布娃娃死亡" class="headerlink" title="UE5 纯蓝图 FPS 实战笔记:命中判定、AI 追击与带冲量的布娃娃死亡"></a>UE5 纯蓝图 FPS 实战笔记:命中判定、AI 追击与带冲量的布娃娃死亡</h1><blockquote>
+<p>一个用 UE 5.8 纯蓝图(零 C++)完成的 FPS 练习项目。本文梳理三个核心系统的实现思路:武器命中判定、Whisper AI 追击,以及带冲量的布娃娃死亡效果。文中的蓝图节点名均可在编辑器里直接搜索复现。</p>
+</blockquote>
+<h2 id="一、先看整体架构"><a href="#一、先看整体架构" class="headerlink" title="一、先看整体架构"></a>一、先看整体架构</h2><p>项目逻辑全部放在 <code>Content/Code/</code> 下,类关系非常简单:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">BP_FPSPlayer (Character)  ──BI_Fire接口──▶  BP_WeaponBase (Actor) ──继承──▶ BP_VIRTUS</span><br><span class="line">        │                                          │</span><br><span class="line">        │ 射线检测                                  │ 命中后 Cast 并调用</span><br><span class="line">        └──────────────────▶ BP_Whisper (Character, AI 敌人) ◀──────────────┘</span><br></pre></td></tr></table></figure>
+
+<p>三个系统围绕”一颗子弹”串联起来:扣下扳机 → 接口调用开火 → 射线检测 → 物理材质分流 → 命中敌人 → 传递骨骼名与子弹方向 → 伤害计算 → 受击蒙太奇 &#x2F; 布娃娃死亡。理解了这条链路,整个项目的设计思路就清楚了。</p>
+<h2 id="二、命中判定-Hitscan-物理材质分流"><a href="#二、命中判定-Hitscan-物理材质分流" class="headerlink" title="二、命中判定:Hitscan + 物理材质分流"></a>二、命中判定:Hitscan + 物理材质分流</h2><h3 id="1-射线检测基础"><a href="#1-射线检测基础" class="headerlink" title="1. 射线检测基础"></a>1. 射线检测基础</h3><p>开火逻辑在武器基类 <code>BP_WeaponBase</code> 里,核心就是一条 <code>LineTraceSingle</code>:</p>
+<ul>
+<li>使用<strong>自定义 Trace 通道</strong> <code>TraceTypeQuery1</code>,和默认的 Visibility&#x2F;Camera 通道隔离开,避免被其他系统的射线干扰;</li>
+<li>打开 <code>bTraceComplex</code>,对复杂碰撞体做精确检测,保证打在骨骼网格的轮廓上而不是胶囊体上;</li>
+<li>用 <code>BreakHitResult</code> 拆出所有需要的信息:<code>ImpactPoint</code>、<code>ImpactNormal</code>、<code>HitBoneName</code>、<code>Distance</code>、<code>PhysMat</code>、<code>HitActor</code>。</li>
+</ul>
+<p>其中<strong>子弹方向</strong>直接由数学算出来:<code>Normal(TraceEnd - TraceStart)</code>,归一化后传给敌人——这一步很关键,后面布娃娃死亡要复用这个方向,后面会讲。</p>
+<h3 id="2-用物理材质做表面判定-而不是一堆-Cast"><a href="#2-用物理材质做表面判定-而不是一堆-Cast" class="headerlink" title="2. 用物理材质做表面判定,而不是一堆 Cast"></a>2. 用物理材质做表面判定,而不是一堆 Cast</h3><p>命中后要决定”打到了什么、该播什么特效”。常见做法是 <code>Cast To</code> 各种 Actor 类,但这里换了一个更优雅的思路:<strong>用 PhysicalMaterial 的表面类型(Physical Surface)做分流</strong>。</p>
+<p>项目里定义了四种物理材质:</p>
+<table>
+<thead>
+<tr>
+<th>物理材质</th>
+<th>表面类型</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>PM_Dirt</code> &#x2F; <code>PM_Metal</code> &#x2F; <code>PM_Wood</code></td>
+<td>SurfaceType1~3</td>
+<td>地形与场景物体</td>
+</tr>
+<tr>
+<td><strong><code>PM_Enemy</code></strong></td>
+<td><strong>SurfaceType4</strong></td>
+<td><strong>敌人身体专用标记</strong></td>
+</tr>
+</tbody></table>
+<p>射线命中后拿到 <code>PhysMat</code>,一个 <code>SwitchEnum</code> 按表面类型分流:</p>
+<ul>
+<li>水泥&#x2F;泥土&#x2F;金属&#x2F;木头 → 对应的弹着 VFX(<code>FX_SquibConcrete/Dirt/Metal/Wood</code>)+ 撞击音效 Cue + 弹孔贴花(<code>BP_BulletDecal</code>,按表面切换贴花材质);</li>
+<li><code>PM_Enemy</code> → 播放血液 Niagara(<code>Impact_Blood</code>),进入敌人伤害流程。</li>
+</ul>
+<p><strong>为什么这个设计值得记一笔</strong>:物理材质是碰撞查询的免费副产品——<code>BreakHitResult</code> 里的 <code>PhysMat</code> 不需要任何额外查询或 Cast,零开销就拿到了”这是什么表面”。美术在网格上设置物理材质后,逻辑零改动即可生效;以后加新表面类型也只是加一个枚举分支和一套表现资产。相比”把场景里每种物体都 Cast 一遍”,这套方案更干净、更好扩展。</p>
+<h3 id="3-命中敌人后的传递链"><a href="#3-命中敌人后的传递链" class="headerlink" title="3. 命中敌人后的传递链"></a>3. 命中敌人后的传递链</h3><p>命中 <code>BP_Whisper</code> 时,武器做三件事:</p>
+<ol>
+<li><code>Cast To BP_Whisper</code>;</li>
+<li>调用敌人的两个自定义事件:<ul>
+<li><strong><code>Impact Bone</code>(Name)</strong>——命中骨骼名;</li>
+<li><strong><code>Bullet Direction</code>(Vector)</strong>——上面算出的子弹方向;</li>
+</ul>
+</li>
+<li><code>ApplyDamage(BaseDamage)</code> 结算伤害。</li>
+</ol>
+<p>一次 Trace 的所有信息就这样”喂”给了敌人,伤害计算、受击表现、死亡表现共用同一份命中数据,不会有二次查询。</p>
+<h3 id="4-射速与后坐力"><a href="#4-射速与后坐力" class="headerlink" title="4. 射速与后坐力"></a>4. 射速与后坐力</h3><ul>
+<li><strong>射速</strong>:<code>SetTimerDelegate</code> 计时器循环触发开火(间隔约 0.1s,即 600rpm 档),<code>IsFiring</code> 标志控制启停;</li>
+<li><strong>后坐力</strong>:<code>AddControllerPitchInput</code> &#x2F; <code>AddControllerYawInput</code> 配合 <code>RandomFloatInRange</code> 在随机范围内抖动摇杆,而不是固定偏移——连续点射时枪口跳动更自然;</li>
+<li>开火表现由玩家&#x2F;武器双视角蒙太奇 + 动画通知 <code>MCX-VIRTUS_Fire</code> 同步,逻辑时机跟着动画走。</li>
+</ul>
+<h2 id="三、Whisper-AI-没有行为树的纯蓝图追击"><a href="#三、Whisper-AI-没有行为树的纯蓝图追击" class="headerlink" title="三、Whisper AI:没有行为树的纯蓝图追击"></a>三、Whisper AI:没有行为树的纯蓝图追击</h2><h3 id="1-异步-MoveTo-委托循环"><a href="#1-异步-MoveTo-委托循环" class="headerlink" title="1. 异步 MoveTo + 委托循环"></a>1. 异步 MoveTo + 委托循环</h3><p>Whisper 继承 <code>Character</code>,但<strong>没有使用 AIController 类,也没有行为树</strong>,整个 AI 就是一张事件图。</p>
+<p>核心节点是 <code>AIBlueprintHelperLibrary</code> 的 <strong><code>CreateMoveToProxyObject</code></strong>——一个异步 AIMoveTo 代理节点,用法和时序节点类似:</p>
+<ul>
+<li>输入:目标 Actor(玩家)、<code>AcceptanceRadius</code>(约 50);</li>
+<li>输出:<strong>OnSuccess &#x2F; OnFail</strong> 两个委托,绑到自定义事件 <code>MovementResult</code>;</li>
+<li>在回调里重新发起下一次 MoveTo,就形成了”追到&#x2F;追丢了都继续追”的循环。</li>
+</ul>
+<p>配合 <code>LessEqual</code> 距离判定(玩家进入约 5000 范围内才发起追击)和追击时的 <code>MaxWalkSpeed</code> 调整,一个”巡逻发呆 → 发现玩家 → 加速追击”的简单 AI 就有了。对于单敌人练习场景,这个方案比搭一套行为树轻得多,而且事件流一目了然、容易调试。</p>
+<h3 id="2-状态枚举-谁打你-谁告诉你演什么"><a href="#2-状态枚举-谁打你-谁告诉你演什么" class="headerlink" title="2. 状态枚举:谁打你,谁告诉你演什么"></a>2. 状态枚举:谁打你,谁告诉你演什么</h3><p><code>BP_Whisper</code> 内定义了状态枚举:<code>E_Chase</code> &#x2F; <code>E_Death</code> &#x2F; <code>E_HitMontage</code> &#x2F; <code>E_Whisper_Damage</code>。</p>
+<p>有意思的是,这个枚举<strong>不是 AI 自己维护的</strong>——武器命中时直接设置敌人的状态。射击系统本来就掌握着最准确的命中信息(部位、伤害量、致死与否),由它来”导演”敌人的反应,AI 侧只负责响应,职责划分很清晰。</p>
+<h2 id="四、受击反馈-一个-Map-驱动的蒙太奇系统"><a href="#四、受击反馈-一个-Map-驱动的蒙太奇系统" class="headerlink" title="四、受击反馈:一个 Map 驱动的蒙太奇系统"></a>四、受击反馈:一个 Map 驱动的蒙太奇系统</h2><h3 id="1-骨骼名-→-蒙太奇映射"><a href="#1-骨骼名-→-蒙太奇映射" class="headerlink" title="1. 骨骼名 → 蒙太奇映射"></a>1. 骨骼名 → 蒙太奇映射</h3><p>受击表现的核心是一个蓝图变量:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">HitAnimMontages : Map&lt;Name, AnimMontage&gt;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>躯干骨骼(<code>spine_01</code> &#x2F; <code>spine_02</code> &#x2F; <code>spine_03</code>)→ <code>Anim_Whisper_Taking_Bodyshot_Montage</code>;</li>
+<li>其他部位(头、颈、四肢)→ <code>Anim_Whisper_Taking_Headshot_Montage</code>。</li>
+</ul>
+<p>收到 <code>Impact Bone</code> 后 <code>Map Find</code> 查表,<code>PlayAnimMontage</code> 直接播放,还支持 <code>StartSectionName</code> 从指定段起播。<strong>用数据映射替代 if-else 硬编码</strong>,以后加部位、加表现只需要改这个 Map。</p>
+<h3 id="2-伤害倍率"><a href="#2-伤害倍率" class="headerlink" title="2. 伤害倍率"></a>2. 伤害倍率</h3><p>同一份骨骼名还参与伤害计算:<code>EqualEqual(Name)</code> 比较命中骨骼,身体与头部分走不同倍率(示例值约 2x &#x2F; 3x),<code>Multiply</code> 后从 <code>Health</code> 里扣除。也就是说:<strong>骨骼名同时驱动了伤害数值和受击动画</strong>,两个系统共享一个输入。</p>
+<h3 id="3-动画蓝图的分层结构"><a href="#3-动画蓝图的分层结构" class="headerlink" title="3. 动画蓝图的分层结构"></a>3. 动画蓝图的分层结构</h3><p><code>ABP_Whisper</code> 的设计也值得一提:</p>
+<ul>
+<li><strong>Locomotion 状态机</strong>:只有 <code>Idle/Walk</code> 一个状态,由 <code>Walk Speed</code> 参数驱动 1D 混合空间 <code>BS1D_Whisper</code>(Idle1 ↔ Walk1,三次插值)——移动逻辑保持极简;</li>
+<li><strong>DefaultSlot 蒙太奇槽位</strong> + <code>LayeredBoneBlend</code>:受击&#x2F;死亡蒙太奇通过槽位叠加在基础移动动画之上,互不打断。</li>
+</ul>
+<p>“基础运动永远在播,一次性表现走蒙太奇槽位”是角色动画的经典分层思路,这里体现得很标准。</p>
+<h2 id="五、带冲量的布娃娃死亡"><a href="#五、带冲量的布娃娃死亡" class="headerlink" title="五、带冲量的布娃娃死亡"></a>五、带冲量的布娃娃死亡</h2><p>这是整个项目最”爽”的部分:敌人中弹后不是播放死亡动画,而是<strong>沿子弹方向被物理打飞</strong>。</p>
+<p>死亡流程在 <code>BP_Whisper</code> 内,关键四步:</p>
+<ol>
+<li><strong>血量归零判定</strong>(<code>Health - Damage ≤ 0</code>);</li>
+<li><strong><code>DisableMovement</code></strong>——立刻停掉 AI 移动。这一步不能省:追击逻辑还在跑的话,CharacterMovement 会和物理模拟抢控制权,布娃娃会被”拽”着走;</li>
+<li><strong><code>SetAllBodiesSimulatePhysics(true)</code></strong>——全身骨骼切到物理模拟,进入布娃娃;</li>
+<li><strong><code>AddImpulse</code></strong> 施加冲量,三个参数是精髓:<ul>
+<li><code>BoneName</code> &#x3D; <strong>命中骨骼</strong>(来自武器传的 <code>Impact Bone</code>)——冲量只作用在被打中的部位;</li>
+<li><code>Impulse</code> &#x3D; <strong>子弹方向 × 冲量系数</strong>(约 5000,由 <code>Conv_DoubleToVector</code> 标量广播 + 向量乘法实现)——方向与枪线一致;</li>
+<li><strong><code>bVelChange = true</code></strong>——用”速度变化”模式而非”力”模式。力模式受质量影响,布娃娃各部位质量不同,同样的力打在不同部位表现差异巨大;速度变化模式直接指定速度增量,保证爆头和打腿的”手感”一致。</li>
+</ul>
+</li>
+</ol>
+<p>最后把状态切到 <code>E_Death</code>,收尾。</p>
+<p><strong>效果</strong>:爆头向后仰、打腿前扑、侧面命中横飞,方向永远和枪线一致——玩家的每一次射击都能”看到”自己的命中结果,这是手感正反馈的重要来源。</p>
+<p>配套资产 <code>Phy_Whisper_PhysicsAsset</code> 用了 <code>ConeConstraint</code>(圆锥约束)连接骨骼,限制关节旋转自由度,让布娃娃的动作像”人体”而不是”面条”。</p>
+<h2 id="六、让系统跑起来的其他细节"><a href="#六、让系统跑起来的其他细节" class="headerlink" title="六、让系统跑起来的其他细节"></a>六、让系统跑起来的其他细节</h2><h3 id="1-BI-Fire-蓝图接口"><a href="#1-BI-Fire-蓝图接口" class="headerlink" title="1. BI_Fire 蓝图接口"></a>1. BI_Fire 蓝图接口</h3><p>玩家不持有武器具体类引用,统一通过 <code>BI_Fire</code> 接口的 <code>StartWeaponFire</code> &#x2F; <code>StopFire</code> 调用武器。换武器 &#x3D; 换一个实现该接口的 Actor,玩家逻辑零改动。这是蓝图里最值得养成的习惯之一:用接口而非具体类通信。</p>
+<h3 id="2-武器继承体系"><a href="#2-武器继承体系" class="headerlink" title="2. 武器继承体系"></a>2. 武器继承体系</h3><ul>
+<li><code>BP_WeaponBase</code> 承载所有通用逻辑:命中判定、弹药、弹壳、贴花、表面分流;</li>
+<li><code>BP_VIRTUS</code> 子类只做<strong>数据配置</strong>:<code>BaseDamage</code>、<code>FireRate</code>、<code>MagSize</code>、<code>TotalAmmo</code>,以及自己的蒙太奇&#x2F;音效引用;</li>
+<li>武器本身是模块化部件拼装:Weapon &#x2F; Magazine(弹匣)&#x2F; Sight(机瞄)&#x2F; Scope(瞄具)&#x2F; Stock(枪托)&#x2F; Barrel(枪管)分部件挂载。</li>
+</ul>
+<p>新枪 &#x3D; 新子类 + 换部件网格,通用逻辑一行不改。</p>
+<h3 id="3-弹药与换弹"><a href="#3-弹药与换弹" class="headerlink" title="3. 弹药与换弹"></a>3. 弹药与换弹</h3><ul>
+<li>三变量模型:<code>MagSize</code>(弹匣容量)&#x2F; <code>CurrentAmmo</code>(当前弹匣)&#x2F; <code>TotalAmmo</code>(备弹),开火 <code>DecrementInt</code>,打空有专属干火音效 <code>Dead_Trigger_Hand-Guns</code>;</li>
+<li>换弹蒙太奇上放置<strong>自定义动画通知 <code>AN_Reload</code></strong>:动画播到”填弹”那一帧时回调武器蓝图执行 <code>ReloadAmmo</code>——<strong>逻辑时机由动画驱动</strong>,而不是用延迟或计时器猜;</li>
+<li><code>PlayMontageCallbackProxy</code> 的五个回调(OnBlendOut &#x2F; OnCompleted &#x2F; OnInterrupted &#x2F; OnNotifyBegin &#x2F; OnNotifyEnd)管理换弹状态机,换弹途中开火被禁用。</li>
+</ul>
+<h3 id="4-弹壳系统-BP-Casing"><a href="#4-弹壳系统-BP-Casing" class="headerlink" title="4. 弹壳系统 BP_Casing"></a>4. 弹壳系统 BP_Casing</h3><p>小物件也有讲究:</p>
+<ul>
+<li><code>ProjectileMovementComponent</code>:初速 + 重力 + <code>bShouldBounce</code> 落地弹跳;</li>
+<li><code>RotatingMovementComponent</code> + 随机转速:每颗弹壳的落地姿态都不同;</li>
+<li><code>OnComponentHit</code>(开启 <code>bNotifyRigidBodyCollision</code>)落地播放弹壳音效,<code>DoOnce</code> 防重复触发;</li>
+<li><code>InitialLifeSpan</code> 到时自动销毁,不留垃圾。</li>
+</ul>
+<h3 id="5-Enhanced-Input-与瞄准手感"><a href="#5-Enhanced-Input-与瞄准手感" class="headerlink" title="5. Enhanced Input 与瞄准手感"></a>5. Enhanced Input 与瞄准手感</h3><ul>
+<li><code>IMC_FPSInput</code> 映射上下文 + 6 个 Input Action(Move &#x2F; Look &#x2F; Fire &#x2F; Aim &#x2F; Reload &#x2F; Run),IA_Fire 绑定 Triggered&#x2F;Completed 支持按住连发;</li>
+<li>瞄准手感三件套:<code>FInterpTo</code> 平滑 FOV 缩放(默认 75)、瞄准时灵敏度联动(<code>UpdateScopeSensitivity</code>)、走&#x2F;跑速度平滑切换(400 ↔ 600)——全部插值过渡,没有生硬的瞬变;</li>
+<li><code>E_PlayerState</code> &#x2F; <code>E_WeaponState</code> 枚举驱动玩家与武器两套动画状态机。</li>
+</ul>
+<h2 id="七、总结"><a href="#七、总结" class="headerlink" title="七、总结"></a>七、总结</h2><p>回头看这个项目,几条值得记住的设计原则:</p>
+<ol>
+<li><strong>一次 Trace 喂饱所有系统</strong>——命中位置、骨骼、方向、物理材质一次性拿到,伤害、表现、死亡共用一份数据;</li>
+<li><strong>数据驱动替代硬编码</strong>——表面类型枚举、骨骼名→蒙太奇映射表,加内容不写逻辑;</li>
+<li><strong>动画通知驱动逻辑时机</strong>——开火、换弹填弹的时机都跟着动画走;</li>
+<li><strong>接口解耦 + 继承分层</strong>——玩家不认识具体武器,武器基类不认识具体枪型;</li>
+<li><strong>表现优先的小细节</strong>(布娃娃冲量、弹壳随机旋转、插值手感)才是 FPS 手感的来源。</li>
+</ol>
+<p>已知的迭代方向:攻击动画资源(<code>Anim_Whisper_Attack1/2/3</code>)已经备好但尚未接入 AI 流程,下一步可以让 Whisper 在贴近玩家时发起近战攻击;死亡蒙太奇与布娃娃的衔接也可以打磨得更顺滑。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://cyyyyy170.github.io">CyyyyY</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://cyyyyy170.github.io/2026/08/16/2026%E3%80%828.16%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">https://cyyyyy170.github.io/2026/08/16/2026%E3%80%828.16%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://cyyyyy170.github.io" target="_blank">CyyyyY的个人博客</a>！</span></div></div><div class="tag_share"><div class="post-share"></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/" title="2026.7.28笔记"><img class="cover" src="/img/blue%20sky.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">2026.7.28笔记</div></div><div class="info-2"><div class="info-item-1">State Tree State Tree 的层级结构：Root → 守卫检查（Phase&#x2F;Stagger&#x2F;Death）→ 战斗行为（TacticalPause → StanceSwitch → AttackExecution → DefaultMovement），比 Behavior Tree 更接近状态机思维  State 与 Task 是分离的——画了树 ≠ 挂了任务，每个 State 的 Details 面板必须显式添加 Task  Transition 条件可能静默卡死整棵树——State Tree 是线性流转，前面的 Transition 返回FALSE，后面全部不可达  STT（StateTreeTask）每次重入都新建实例——实例变量无法跨循环保持状态，这是和 Behavior Tree的关键差异  State Tree 安全限制：禁止直接引用关卡 Actor，必须用 GetAllActorsOfClass 或 EQS 绕行   数据驱动战斗设计Boss 系统采用完全数据驱动的架构。每个攻击、每个姿态都是独立的 DataAsset。 DA_Bo...</div></div></div></a></nav><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="giscus-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/myface.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">CyyyyY</div><div class="author-info-description">致力于所爱</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">10</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/CyyyyY170"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/CyyyyY170" target="_blank" title="Github"><i class="fab fa-github" style="color: #00AEEC;"></i></a><a class="social-icon" href="https://steamcommunity.com/profiles/76561199184466419/" target="_blank" title="Steam"><i class="fab fa-steam" style="color: #00AEEC;"></i></a><a class="social-icon" href="https://space.bilibili.com/388242453" target="_blank" title="BiliBili"><i class="fab fa-bilibili" style="color: #00AEEC;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">一个彩笔的学习分享</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#UE5-%E7%BA%AF%E8%93%9D%E5%9B%BE-FPS-%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0-%E5%91%BD%E4%B8%AD%E5%88%A4%E5%AE%9A%E3%80%81AI-%E8%BF%BD%E5%87%BB%E4%B8%8E%E5%B8%A6%E5%86%B2%E9%87%8F%E7%9A%84%E5%B8%83%E5%A8%83%E5%A8%83%E6%AD%BB%E4%BA%A1"><span class="toc-number">1.</span> <span class="toc-text">UE5 纯蓝图 FPS 实战笔记:命中判定、AI 追击与带冲量的布娃娃死亡</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E7%9C%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84"><span class="toc-number">1.1.</span> <span class="toc-text">一、先看整体架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%91%BD%E4%B8%AD%E5%88%A4%E5%AE%9A-Hitscan-%E7%89%A9%E7%90%86%E6%9D%90%E8%B4%A8%E5%88%86%E6%B5%81"><span class="toc-number">1.2.</span> <span class="toc-text">二、命中判定:Hitscan + 物理材质分流</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%B0%84%E7%BA%BF%E6%A3%80%E6%B5%8B%E5%9F%BA%E7%A1%80"><span class="toc-number">1.2.1.</span> <span class="toc-text">1. 射线检测基础</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%94%A8%E7%89%A9%E7%90%86%E6%9D%90%E8%B4%A8%E5%81%9A%E8%A1%A8%E9%9D%A2%E5%88%A4%E5%AE%9A-%E8%80%8C%E4%B8%8D%E6%98%AF%E4%B8%80%E5%A0%86-Cast"><span class="toc-number">1.2.2.</span> <span class="toc-text">2. 用物理材质做表面判定,而不是一堆 Cast</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%91%BD%E4%B8%AD%E6%95%8C%E4%BA%BA%E5%90%8E%E7%9A%84%E4%BC%A0%E9%80%92%E9%93%BE"><span class="toc-number">1.2.3.</span> <span class="toc-text">3. 命中敌人后的传递链</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%B0%84%E9%80%9F%E4%B8%8E%E5%90%8E%E5%9D%90%E5%8A%9B"><span class="toc-number">1.2.4.</span> <span class="toc-text">4. 射速与后坐力</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81Whisper-AI-%E6%B2%A1%E6%9C%89%E8%A1%8C%E4%B8%BA%E6%A0%91%E7%9A%84%E7%BA%AF%E8%93%9D%E5%9B%BE%E8%BF%BD%E5%87%BB"><span class="toc-number">1.3.</span> <span class="toc-text">三、Whisper AI:没有行为树的纯蓝图追击</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%BC%82%E6%AD%A5-MoveTo-%E5%A7%94%E6%89%98%E5%BE%AA%E7%8E%AF"><span class="toc-number">1.3.1.</span> <span class="toc-text">1. 异步 MoveTo + 委托循环</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%8A%B6%E6%80%81%E6%9E%9A%E4%B8%BE-%E8%B0%81%E6%89%93%E4%BD%A0-%E8%B0%81%E5%91%8A%E8%AF%89%E4%BD%A0%E6%BC%94%E4%BB%80%E4%B9%88"><span class="toc-number">1.3.2.</span> <span class="toc-text">2. 状态枚举:谁打你,谁告诉你演什么</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%8F%97%E5%87%BB%E5%8F%8D%E9%A6%88-%E4%B8%80%E4%B8%AA-Map-%E9%A9%B1%E5%8A%A8%E7%9A%84%E8%92%99%E5%A4%AA%E5%A5%87%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.4.</span> <span class="toc-text">四、受击反馈:一个 Map 驱动的蒙太奇系统</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E9%AA%A8%E9%AA%BC%E5%90%8D-%E2%86%92-%E8%92%99%E5%A4%AA%E5%A5%87%E6%98%A0%E5%B0%84"><span class="toc-number">1.4.1.</span> <span class="toc-text">1. 骨骼名 → 蒙太奇映射</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%BC%A4%E5%AE%B3%E5%80%8D%E7%8E%87"><span class="toc-number">1.4.2.</span> <span class="toc-text">2. 伤害倍率</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%8A%A8%E7%94%BB%E8%93%9D%E5%9B%BE%E7%9A%84%E5%88%86%E5%B1%82%E7%BB%93%E6%9E%84"><span class="toc-number">1.4.3.</span> <span class="toc-text">3. 动画蓝图的分层结构</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%B8%A6%E5%86%B2%E9%87%8F%E7%9A%84%E5%B8%83%E5%A8%83%E5%A8%83%E6%AD%BB%E4%BA%A1"><span class="toc-number">1.5.</span> <span class="toc-text">五、带冲量的布娃娃死亡</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E8%AE%A9%E7%B3%BB%E7%BB%9F%E8%B7%91%E8%B5%B7%E6%9D%A5%E7%9A%84%E5%85%B6%E4%BB%96%E7%BB%86%E8%8A%82"><span class="toc-number">1.6.</span> <span class="toc-text">六、让系统跑起来的其他细节</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-BI-Fire-%E8%93%9D%E5%9B%BE%E6%8E%A5%E5%8F%A3"><span class="toc-number">1.6.1.</span> <span class="toc-text">1. BI_Fire 蓝图接口</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%AD%A6%E5%99%A8%E7%BB%A7%E6%89%BF%E4%BD%93%E7%B3%BB"><span class="toc-number">1.6.2.</span> <span class="toc-text">2. 武器继承体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%BC%B9%E8%8D%AF%E4%B8%8E%E6%8D%A2%E5%BC%B9"><span class="toc-number">1.6.3.</span> <span class="toc-text">3. 弹药与换弹</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%BC%B9%E5%A3%B3%E7%B3%BB%E7%BB%9F-BP-Casing"><span class="toc-number">1.6.4.</span> <span class="toc-text">4. 弹壳系统 BP_Casing</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Enhanced-Input-%E4%B8%8E%E7%9E%84%E5%87%86%E6%89%8B%E6%84%9F"><span class="toc-number">1.6.5.</span> <span class="toc-text">5. Enhanced Input 与瞄准手感</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E6%80%BB%E7%BB%93"><span class="toc-number">1.7.</span> <span class="toc-text">七、总结</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/08/16/2026%E3%80%828.16%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" title="2026.8.16纯蓝图FPS学习笔记"><img src="/img/Lucy.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2026.8.16纯蓝图FPS学习笔记"/></a><div class="content"><a class="title" href="/2026/08/16/2026%E3%80%828.16%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" title="2026.8.16纯蓝图FPS学习笔记">2026.8.16纯蓝图FPS学习笔记</a><time datetime="2026-08-16T06:00:08.687Z" title="发表于 2026-08-16 14:00:08">2026-08-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/" title="2026.7.28笔记"><img src="/img/blue%20sky.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2026.7.28笔记"/></a><div class="content"><a class="title" href="/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/" title="2026.7.28笔记">2026.7.28笔记</a><time datetime="2026-07-28T05:57:57.191Z" title="发表于 2026-07-28 13:57:57">2026-07-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/22/%E8%93%9D%E5%9B%BE%E6%8E%A5%E5%8F%A3%E4%B8%8E%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E5%99%A8/" title="蓝图接口与事件分发器"><img src="/img/grand%20blue.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="蓝图接口与事件分发器"/></a><div class="content"><a class="title" href="/2026/07/22/%E8%93%9D%E5%9B%BE%E6%8E%A5%E5%8F%A3%E4%B8%8E%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E5%99%A8/" title="蓝图接口与事件分发器">蓝图接口与事件分发器</a><time datetime="2026-07-22T06:04:11.379Z" title="发表于 2026-07-22 14:04:11">2026-07-22</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/17/2026.7.17%E7%AC%94%E8%AE%B0/" title="2026.7.17笔记"><img src="/img/qisha.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2026.7.17笔记"/></a><div class="content"><a class="title" href="/2026/07/17/2026.7.17%E7%AC%94%E8%AE%B0/" title="2026.7.17笔记">2026.7.17笔记</a><time datetime="2026-07-17T06:17:15.802Z" title="发表于 2026-07-17 14:17:15">2026-07-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/13/%E7%AC%AC%E4%B8%89%E4%BA%BA%E7%A7%B0%E8%A7%92%E8%89%B2%E5%8A%A8%E7%94%BB/" title="第三人称角色动画"><img src="/img/power.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="第三人称角色动画"/></a><div class="content"><a class="title" href="/2026/07/13/%E7%AC%AC%E4%B8%89%E4%BA%BA%E7%A7%B0%E8%A7%92%E8%89%B2%E5%8A%A8%E7%94%BB/" title="第三人称角色动画">第三人称角色动画</a><time datetime="2026-07-13T07:13:23.705Z" title="发表于 2026-07-13 15:13:23">2026-07-13</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2026 By CyyyyY</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = null
+
+  const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
+
+  const createScriptElement = config => {
+    const ele = document.createElement('script')
+    Object.entries(config).forEach(([key, value]) => {
+      ele.setAttribute(key, value)
+    })
+    return ele
+  }
+
+  const loadGiscus = (el = document, key) => {
+    const mappingConfig = isShuoshuo
+      ? { 'data-mapping': 'specific', 'data-term': key }
+      : { 'data-mapping': (option && option['data-mapping']) || 'pathname' }
+
+    const giscusConfig = {
+      src: 'https://giscus.app/client.js',
+      'data-repo': 'CyyyyY170/CyyyyY170.github.io',
+      'data-repo-id': 'R_kgDOTP0qWA',
+      'data-category-id': 'DIC_kwDOTP0qWM4DBKfL',
+      'data-theme': getGiscusTheme(document.documentElement.getAttribute('data-theme')),
+      'data-reactions-enabled': '1',
+      crossorigin: 'anonymous',
+      async: true,
+      ...option,
+      ...mappingConfig
+    }
+
+    const scriptElement = createScriptElement(giscusConfig)
+
+    el.querySelector('#giscus-wrap').appendChild(scriptElement)
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGiscus = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+  }
+
+  const changeGiscusTheme = theme => {
+    const iframe = document.querySelector('#giscus-wrap iframe')
+    if (iframe) {
+      const message = {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(theme)
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(message, 'https://giscus.app')
+    }
+  }
+
+  btf.addGlobalFn('themeChange', changeGiscusTheme, 'giscus')
+
+  if (isShuoshuo) {
+    'Giscus' === 'Giscus'
+      ? window.shuoshuoComment = { loadComment: loadGiscus }
+      : window.loadOtherComment = loadGiscus
+    return
+  }
+
+  if ('Giscus' === 'Giscus' || !true) {
+    if (true) btf.loadComment(document.getElementById('giscus-wrap'), loadGiscus)
+    else loadGiscus()
+  } else {
+    window.loadOtherComment = loadGiscus
+  }
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

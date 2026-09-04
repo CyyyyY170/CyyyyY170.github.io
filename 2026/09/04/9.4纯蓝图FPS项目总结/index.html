@@ -1,0 +1,278 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>2026.9.4纯蓝图FPS项目总结 | CyyyyY的个人博客</title><meta name="author" content="CyyyyY,3318055170@qq.com"><meta name="copyright" content="CyyyyY"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="FPS 波次生存 Demo:UE5.8 纯蓝图项目的技术复盘 用纯蓝图完成一个 FPS 生存玩法闭环:射击 → 受击反馈 → 死亡流程 → 波次生存 → 灯光信号 → 击杀掉落。本文是技术向复盘,写给同样在用蓝图做游戏的人。  技术栈UE 5.8,零 C++ 纯蓝图。用到的系统:Enhanced Input、Animation Montage + AnimNotify、MetaSound、Time">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2026.9.4纯蓝图FPS项目总结">
+<meta property="og:url" content="https://cyyyyy170.github.io/2026/09/04/9.4%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="CyyyyY的个人博客">
+<meta property="og:description" content="FPS 波次生存 Demo:UE5.8 纯蓝图项目的技术复盘 用纯蓝图完成一个 FPS 生存玩法闭环:射击 → 受击反馈 → 死亡流程 → 波次生存 → 灯光信号 → 击杀掉落。本文是技术向复盘,写给同样在用蓝图做游戏的人。  技术栈UE 5.8,零 C++ 纯蓝图。用到的系统:Enhanced Input、Animation Montage + AnimNotify、MetaSound、Time">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cyyyyy170.github.io/img/mygo.jpg">
+<meta property="article:published_time" content="2026-09-04T09:19:48.230Z">
+<meta property="article:modified_time" content="2026-09-04T09:32:54.896Z">
+<meta property="article:author" content="CyyyyY">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cyyyyy170.github.io/img/mygo.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "2026.9.4纯蓝图FPS项目总结",
+  "url": "https://cyyyyy170.github.io/2026/09/04/9.4%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93/",
+  "image": "https://cyyyyy170.github.io/img/mygo.jpg",
+  "datePublished": "2026-09-04T09:19:48.230Z",
+  "dateModified": "2026-09-04T09:32:54.896Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "CyyyyY",
+      "url": "https://cyyyyy170.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://cyyyyy170.github.io/2026/09/04/9.4%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":230,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '2026.9.4纯蓝图FPS项目总结',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/reze.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/myface.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">11</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/mygo.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">CyyyyY的个人博客</span></a><a class="nav-page-title" href="/"><span class="site-name">2026.9.4纯蓝图FPS项目总结</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">2026.9.4纯蓝图FPS项目总结</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-09-04T09:19:48.230Z" title="发表于 2026-09-04 17:19:48">2026-09-04</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-09-04T09:32:54.896Z" title="更新于 2026-09-04 17:32:54">2026-09-04</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.8k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>6分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><div id="post-outdate-notice" data="{&quot;limitDay&quot;:365,&quot;messagePrev&quot;:&quot;已经过了&quot;,&quot;messageNext&quot;:&quot;天自上次更新，文章内容可能已经过期。&quot;,&quot;postUpdate&quot;:&quot;2026-09-04 17:32:54&quot;}" hidden></div><h1 id="FPS-波次生存-Demo-UE5-8-纯蓝图项目的技术复盘"><a href="#FPS-波次生存-Demo-UE5-8-纯蓝图项目的技术复盘" class="headerlink" title="FPS 波次生存 Demo:UE5.8 纯蓝图项目的技术复盘"></a>FPS 波次生存 Demo:UE5.8 纯蓝图项目的技术复盘</h1><blockquote>
+<p>用纯蓝图完成一个 FPS 生存玩法闭环:射击 → 受击反馈 → 死亡流程 → 波次生存 → 灯光信号 → 击杀掉落。本文是技术向复盘,写给同样在用蓝图做游戏的人。</p>
+</blockquote>
+<h2 id="技术栈"><a href="#技术栈" class="headerlink" title="技术栈"></a>技术栈</h2><p>UE 5.8,<strong>零 C++ 纯蓝图</strong>。用到的系统:Enhanced Input、Animation Montage + AnimNotify、MetaSound、Timeline、UMG、AI MoveTo + NavMesh、Sphere Trigger。所有自研逻辑在 <code>Content/Code</code> 下按 Enemy &#x2F; Pickup &#x2F; Player &#x2F; Weapon 分层;资产来自商城包。</p>
+<h2 id="十个技术亮点"><a href="#十个技术亮点" class="headerlink" title="十个技术亮点"></a>十个技术亮点</h2><h3 id="1-手搓-FPS-相机臂-Enhanced-Input-每帧同步控制旋转"><a href="#1-手搓-FPS-相机臂-Enhanced-Input-每帧同步控制旋转" class="headerlink" title="1. 手搓 FPS 相机臂(Enhanced Input + 每帧同步控制旋转)"></a>1. 手搓 FPS 相机臂(Enhanced Input + 每帧同步控制旋转)</h3><p>没有用现成的 Character 视角,而是自己搭了第一人称架构:七个 IA(移动&#x2F;视角&#x2F;奔跑&#x2F;瞄准&#x2F;开火&#x2F;换弹&#x2F;重开),<code>IA_Look</code> 的 X→<code>AddControllerYawInput</code>、Y→<code>AddControllerPitchInput</code>;Event Tick 每帧 <code>SetWorldRotation(Arm)</code> ← 控制旋转的 Pitch&#x2F;Yaw;相机挂在 Arm 下,带旋转基线与缩放补偿。</p>
+<p>关键点在于<strong>移动与视角分离</strong>:<code>AddMovementInput</code> 只取控制 Yaw 的 forward&#x2F;right,相机姿态由 Tick 同步——鼠标灵敏度、上下限视角、武器臂动画互不干扰。</p>
+<h3 id="2-双层血幕-状态层-事件层分离"><a href="#2-双层血幕-状态层-事件层分离" class="headerlink" title="2. 双层血幕:状态层 + 事件层分离"></a>2. 双层血幕:状态层 + 事件层分离</h3><p><code>WBP_BloodOverlay</code> 拆成两层:BloodBase 由<strong>血量驱动</strong>(<code>UpdateBlood</code>,持续反映当前血量比),BloodFlash 由<strong>受击事件泵送</strong>(<code>E_Blood_Screen</code>,每次受击打一个脉冲)。两个通道各自独立更新,避免单一透明度数值”既要持续又要脉冲”打架——UI 反馈拆成”状态”和”事件”两个维度。</p>
+<h3 id="3-MetaSound-心跳"><a href="#3-MetaSound-心跳" class="headerlink" title="3. MetaSound 心跳"></a>3. MetaSound 心跳</h3><p>心跳不是播一个循环音频,而是用 MetaSound合成（在商城找不到免费的资源包让ai合成的）。</p>
+<h3 id="4-AnimNotify-命中帧结算"><a href="#4-AnimNotify-命中帧结算" class="headerlink" title="4. AnimNotify 命中帧结算"></a>4. AnimNotify 命中帧结算</h3><p>Whisper 的攻击判定不在 Tick 里做,而是挂在攻击蒙太奇 <code>Anim_Whisper_Attack2_Montage</code> 的 <code>AN_WhisperAttackHit</code> 通知帧上:命中帧触发事件 <code>E_WhisperAttackHit</code>,事件链带 <strong>Dead 守卫 + 距离判断</strong>(<code>GetDistanceTo ≤ AttackRange</code>)再结算伤害。判定时机与动画严格同步,不吃帧率、不出现”空气刀”,还天然支持用动画做前摇&#x2F;后摇。</p>
+<h3 id="5-死亡演出-单-Timeline-三通道并行"><a href="#5-死亡演出-单-Timeline-三通道并行" class="headerlink" title="5. 死亡演出:单 Timeline 三通道并行"></a>5. 死亡演出:单 Timeline 三通道并行</h3><p>死亡不是播一个动画,而是一个 Timeline 三通道并行 Lerp:相机位置 Z Lerp(-70)、相机 Roll Lerp(基线→+75)、枪 Z Lerp(基线−90),分别模拟倒地、视线倾斜、武器脱手。Timeline Finished → 创建 <code>WBP_DeathScreen</code>(ZOrder&#x3D;100)→ 播 5s 渐入 → P 键 <code>OpenLevel(Get Current Level Name)</code> 全量重置。</p>
+<p>踩过的转轴 bug 暴露了一个通用技术点:<strong>Lerp 旋转前先存相对旋转基线</strong>(<code>DeathRollStart</code> ← Get Camera → Get Relative Rotation → Break Rotator → Roll),否则把绝对世界旋转当增量用,相机初始朝向一变整个效果就歪。</p>
+<h3 id="6-波次系统-自定义事件解耦-并行分支的”必走”设计"><a href="#6-波次系统-自定义事件解耦-并行分支的”必走”设计" class="headerlink" title="6. 波次系统:自定义事件解耦 + 并行分支的”必走”设计"></a>6. 波次系统:自定义事件解耦 + 并行分支的”必走”设计</h3><p>Whisper 不认识 WaveManager。死亡链末尾接一个 <strong>Sequence 三路并行</strong>:Then0 → Random&lt;0.4 → 掉弹药;Then1 → &lt;0.08 → 掉血包;Then2 → Get All Actors of Class(WaveManager) → Get(0) → 调 <code>E_EnemyDied</code>。波次计数走”必走”分支,掉落走概率旁路——并行分支里<strong>必须有一条确定执行的路径承载核心逻辑</strong>,这是事件解耦时最容易忘的设计。</p>
+<p>WaveManager 侧:<code>E_StartNextWave</code> 重置计数、<code>WaveActive</code> 守卫防死后重复计数、<code>EnemiesAlive ≤ 0 → Delay 5 → 下一波</code>。</p>
+<h3 id="7-生成点过滤-Visibility-Trace-兜底"><a href="#7-生成点过滤-Visibility-Trace-兜底" class="headerlink" title="7. 生成点过滤:Visibility Trace + 兜底"></a>7. 生成点过滤:Visibility Trace + 兜底</h3><p>波次生成点不是随机的:距离 ≥25m + Visibility Trace 视线死角过滤 + Shuffle 保证同波不重复,候选不足时兜底回退全点(防”一波 0 只”)。两个引擎级细节:</p>
+<ul>
+<li>引擎源码确认 <code>TraceTypeQuery1 = Visibility</code>(内置 trace 类型只有 Visibility + Camera);</li>
+<li>Pawn 胶囊的 Visibility 响应是 Ignore,<strong>所以视线检测根本不用 ActorsToIgnore 排除玩家自己</strong>。</li>
+</ul>
+<h3 id="8-掉落物生命周期-用数据标记代替类型枚举"><a href="#8-掉落物生命周期-用数据标记代替类型枚举" class="headerlink" title="8. 掉落物生命周期:用数据标记代替类型枚举"></a>8. 掉落物生命周期:用数据标记代替类型枚举</h3><p>掉落物和固定补给共用父类 <code>BP_Pickup</code>(Sphere 触发 + Switch PickupType),差异只在一个 bool <code>bIsDrop</code>。波间清理时 ForEach 全部 Pickup → Branch(bIsDrop) → Destroy——固定补给自然保留。以后加新掉落物只需加子类,清理逻辑零改动。<strong>用数据字段区分生命周期,比硬编码类列表干净得多。</strong></p>
+<h3 id="9-Clamp-的两种妙用"><a href="#9-Clamp-的两种妙用" class="headerlink" title="9. Clamp 的两种妙用"></a>9. Clamp 的两种妙用</h3><ul>
+<li>备弹上限:<code>AddAmmo</code> 的 Clamp 上限从 60 修到 180——原来满弹药(60&#x2F;60)捡包会被”补到上限 60”直接砍没,这是拾取系统的隐藏 bug;</li>
+<li>血包回满:Amount 填 <strong>9999</strong>,Clamp 到 MaxHealth &#x3D; 溢出即回满。不用读当前血量算差值,”溢出 + Clamp”两行节点解决”回满”语义。</li>
+</ul>
+<h3 id="10-灯光三态-定时器取模闪烁-布尔语义核对"><a href="#10-灯光三态-定时器取模闪烁-布尔语义核对" class="headerlink" title="10. 灯光三态:定时器取模闪烁 + 布尔语义核对"></a>10. 灯光三态:定时器取模闪烁 + 布尔语义核对</h3><p>路灯信号三个状态全用一套组件控制:波次中 <code>E_LampSetLit</code> 只留加油站灯;预警&#x2F;结束用 <code>E_FlashTick</code> 定时器 <strong>0.25s × 20 拍,<code>Modulo B2 → Equal B1</code> 奇偶切换明灭</strong>——定时器 + 取模是蓝图里做闪烁最干净的方式。另外踩了一个语义坑:<code>E_LampSetAll</code> 的 Visible 直连的是 <code>SetActorHiddenInGame</code> 的 bNewHidden(“是否<strong>隐藏</strong>“),语义反转导致 SetAll(true)&#x3D;全隐藏,修法是 Visible → NOT → 两个 bNewHidden。</p>
+<h2 id="踩过的坑"><a href="#踩过的坑" class="headerlink" title="踩过的坑"></a>踩过的坑</h2><ol>
+<li><strong>Auto Possess AI 默认 “Placed in World”</strong>:SpawnActor 刷出的怪没有 AI 控制器,站着不动——改为 “Placed in World or Spawned”。叠加第二坑:<strong>NavMesh 是旧数据</strong>,新摆的生成点不在导航网上,重建 Build Paths 才解决。</li>
+<li><strong>UE 5.8 的空数组编译错误</strong>:旧版 Set 节点数组输入悬空&#x3D;清空,5.8 直接编译报错,清空必须接空 Make Array。更大教训:<strong>编译面板有红错时,PIE 出的任何运行时错误都不作数</strong>。</li>
+<li><strong>exec 引脚双线残留</strong>:exec 输入引脚可同时进多根线,拖新线不会顶掉旧线——旧线残留&#x3D;双重触发(血包掉两个、波次提前结束)。Alt+点击断旧线。</li>
+<li><strong>ForEach 后续要挂 Completed</strong>:挂循环体内&#x3D;每迭代跑一遍&#x2F;空数组零遍(第一波不刷怪就是这么查出来的)。</li>
+<li><strong>Set 的执行顺序</strong>:Set 存某节点的输出,执行线必须在该节点之后——数据引脚只在执行那一刻取值。把 Set AllPoints 放在 Get All Actors 之前,存进去的是空数组。</li>
+<li><strong>OFPA 地图的”隐形”实例</strong>:实例在 <code>__ExternalActors__</code> 的独立 uasset 里,umap 本体搜不到;验证”摆没摆进地图”要去扫外部文件。</li>
+</ol>
+<h2 id="工程方法"><a href="#工程方法" class="headerlink" title="工程方法"></a>工程方法</h2><ul>
+<li><strong>存档式提交</strong>:每完成一个功能提交一次,7 个存档点全部可回退;</li>
+<li><strong>引脚级验证工作流</strong>:蓝图是二进制、无法做代码审查,而空对象调用会被静默跳过——我把关键图导出成txt文本,逐引脚检查 <code>LinkedTo</code> 字段,抓到过两次致命漏连(Clamp→Set Health、CreateWidget→Set BloodOverlay)。这是纯蓝图项目最可靠的验证手段;</li>
+<li><strong>踩坑记录</strong>:每个 bug 记现象、根因、修法,后期排查复用率极高。</li>
+</ul>
+<h2 id="不足与下一步"><a href="#不足与下一步" class="headerlink" title="不足与下一步"></a>不足与下一步</h2><ul>
+<li><strong>纯蓝图的天花板</strong>:现在的规模 OK,但继续加系统(背包&#x2F;AI 行为树&#x2F;存档)连线复杂度会指数级上升,下一个项目准备上 C++;</li>
+<li><strong>工程债</strong>:<code>Intermediate</code>&#x2F;<code>Saved</code> 被 git 跟踪、无远程备份、调试打印未清;</li>
+<li><strong>搁置功能</strong>:脚步音效、加油机打爆 AOE。</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://cyyyyy170.github.io">CyyyyY</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://cyyyyy170.github.io/2026/09/04/9.4%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93/">https://cyyyyy170.github.io/2026/09/04/9.4%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://cyyyyy170.github.io" target="_blank">CyyyyY的个人博客</a>！</span></div></div><div class="tag_share"><div class="post-share"></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/08/16/2026.8.16%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" title="2026.8.16纯蓝图FPS学习笔记"><img class="cover" src="/img/Lucy.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">2026.8.16纯蓝图FPS学习笔记</div></div><div class="info-2"><div class="info-item-1">UE5 纯蓝图 FPS 实战笔记:命中判定、AI 追击与带冲量的布娃娃死亡 一个用 UE 5.8 纯蓝图(零 C++)完成的 FPS 练习项目。本文梳理三个核心系统的实现思路:武器命中判定、Whisper AI 追击,以及带冲量的布娃娃死亡效果。文中的蓝图节点名均可在编辑器里直接搜索复现。  一、先看整体架构项目逻辑全部放在 Content/Code/ 下,类关系非常简单: 1234BP_FPSPlayer (Character)  ──BI_Fire接口──▶  BP_WeaponBase (Actor) ──继承──▶ BP_VIRTUS        │                                          │        │ 射线检测                                  │ 命中后 Cast 并调用        └──────────────────▶ BP_Whisper (Character, AI 敌人) ◀──────────────┘  三个系统围绕”一颗子弹”串联起来:扣下扳机 → 接口调用开火 →...</div></div></div></a></nav><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="giscus-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/myface.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">CyyyyY</div><div class="author-info-description">致力于所爱</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">11</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/CyyyyY170"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/CyyyyY170" target="_blank" title="Github"><i class="fab fa-github" style="color: #00AEEC;"></i></a><a class="social-icon" href="https://steamcommunity.com/profiles/76561199184466419/" target="_blank" title="Steam"><i class="fab fa-steam" style="color: #00AEEC;"></i></a><a class="social-icon" href="https://space.bilibili.com/388242453" target="_blank" title="BiliBili"><i class="fab fa-bilibili" style="color: #00AEEC;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">一个彩笔的学习分享</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#FPS-%E6%B3%A2%E6%AC%A1%E7%94%9F%E5%AD%98-Demo-UE5-8-%E7%BA%AF%E8%93%9D%E5%9B%BE%E9%A1%B9%E7%9B%AE%E7%9A%84%E6%8A%80%E6%9C%AF%E5%A4%8D%E7%9B%98"><span class="toc-number">1.</span> <span class="toc-text">FPS 波次生存 Demo:UE5.8 纯蓝图项目的技术复盘</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8A%80%E6%9C%AF%E6%A0%88"><span class="toc-number">1.1.</span> <span class="toc-text">技术栈</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E4%B8%AA%E6%8A%80%E6%9C%AF%E4%BA%AE%E7%82%B9"><span class="toc-number">1.2.</span> <span class="toc-text">十个技术亮点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%89%8B%E6%90%93-FPS-%E7%9B%B8%E6%9C%BA%E8%87%82-Enhanced-Input-%E6%AF%8F%E5%B8%A7%E5%90%8C%E6%AD%A5%E6%8E%A7%E5%88%B6%E6%97%8B%E8%BD%AC"><span class="toc-number">1.2.1.</span> <span class="toc-text">1. 手搓 FPS 相机臂(Enhanced Input + 每帧同步控制旋转)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%8F%8C%E5%B1%82%E8%A1%80%E5%B9%95-%E7%8A%B6%E6%80%81%E5%B1%82-%E4%BA%8B%E4%BB%B6%E5%B1%82%E5%88%86%E7%A6%BB"><span class="toc-number">1.2.2.</span> <span class="toc-text">2. 双层血幕:状态层 + 事件层分离</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-MetaSound-%E5%BF%83%E8%B7%B3"><span class="toc-number">1.2.3.</span> <span class="toc-text">3. MetaSound 心跳</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-AnimNotify-%E5%91%BD%E4%B8%AD%E5%B8%A7%E7%BB%93%E7%AE%97"><span class="toc-number">1.2.4.</span> <span class="toc-text">4. AnimNotify 命中帧结算</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E6%AD%BB%E4%BA%A1%E6%BC%94%E5%87%BA-%E5%8D%95-Timeline-%E4%B8%89%E9%80%9A%E9%81%93%E5%B9%B6%E8%A1%8C"><span class="toc-number">1.2.5.</span> <span class="toc-text">5. 死亡演出:单 Timeline 三通道并行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-%E6%B3%A2%E6%AC%A1%E7%B3%BB%E7%BB%9F-%E8%87%AA%E5%AE%9A%E4%B9%89%E4%BA%8B%E4%BB%B6%E8%A7%A3%E8%80%A6-%E5%B9%B6%E8%A1%8C%E5%88%86%E6%94%AF%E7%9A%84%E2%80%9D%E5%BF%85%E8%B5%B0%E2%80%9D%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.2.6.</span> <span class="toc-text">6. 波次系统:自定义事件解耦 + 并行分支的”必走”设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-%E7%94%9F%E6%88%90%E7%82%B9%E8%BF%87%E6%BB%A4-Visibility-Trace-%E5%85%9C%E5%BA%95"><span class="toc-number">1.2.7.</span> <span class="toc-text">7. 生成点过滤:Visibility Trace + 兜底</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-%E6%8E%89%E8%90%BD%E7%89%A9%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F-%E7%94%A8%E6%95%B0%E6%8D%AE%E6%A0%87%E8%AE%B0%E4%BB%A3%E6%9B%BF%E7%B1%BB%E5%9E%8B%E6%9E%9A%E4%B8%BE"><span class="toc-number">1.2.8.</span> <span class="toc-text">8. 掉落物生命周期:用数据标记代替类型枚举</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-Clamp-%E7%9A%84%E4%B8%A4%E7%A7%8D%E5%A6%99%E7%94%A8"><span class="toc-number">1.2.9.</span> <span class="toc-text">9. Clamp 的两种妙用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#10-%E7%81%AF%E5%85%89%E4%B8%89%E6%80%81-%E5%AE%9A%E6%97%B6%E5%99%A8%E5%8F%96%E6%A8%A1%E9%97%AA%E7%83%81-%E5%B8%83%E5%B0%94%E8%AF%AD%E4%B9%89%E6%A0%B8%E5%AF%B9"><span class="toc-number">1.2.10.</span> <span class="toc-text">10. 灯光三态:定时器取模闪烁 + 布尔语义核对</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B8%A9%E8%BF%87%E7%9A%84%E5%9D%91"><span class="toc-number">1.3.</span> <span class="toc-text">踩过的坑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B7%A5%E7%A8%8B%E6%96%B9%E6%B3%95"><span class="toc-number">1.4.</span> <span class="toc-text">工程方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8D%E8%B6%B3%E4%B8%8E%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">1.5.</span> <span class="toc-text">不足与下一步</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/09/04/9.4%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93/" title="2026.9.4纯蓝图FPS项目总结"><img src="/img/mygo.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2026.9.4纯蓝图FPS项目总结"/></a><div class="content"><a class="title" href="/2026/09/04/9.4%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93/" title="2026.9.4纯蓝图FPS项目总结">2026.9.4纯蓝图FPS项目总结</a><time datetime="2026-09-04T09:19:48.230Z" title="发表于 2026-09-04 17:19:48">2026-09-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/08/16/2026.8.16%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" title="2026.8.16纯蓝图FPS学习笔记"><img src="/img/Lucy.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2026.8.16纯蓝图FPS学习笔记"/></a><div class="content"><a class="title" href="/2026/08/16/2026.8.16%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" title="2026.8.16纯蓝图FPS学习笔记">2026.8.16纯蓝图FPS学习笔记</a><time datetime="2026-08-16T06:00:08.687Z" title="发表于 2026-08-16 14:00:08">2026-08-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/" title="2026.7.28笔记"><img src="/img/blue%20sky.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2026.7.28笔记"/></a><div class="content"><a class="title" href="/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/" title="2026.7.28笔记">2026.7.28笔记</a><time datetime="2026-07-28T05:57:57.191Z" title="发表于 2026-07-28 13:57:57">2026-07-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/22/%E8%93%9D%E5%9B%BE%E6%8E%A5%E5%8F%A3%E4%B8%8E%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E5%99%A8/" title="蓝图接口与事件分发器"><img src="/img/grand%20blue.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="蓝图接口与事件分发器"/></a><div class="content"><a class="title" href="/2026/07/22/%E8%93%9D%E5%9B%BE%E6%8E%A5%E5%8F%A3%E4%B8%8E%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E5%99%A8/" title="蓝图接口与事件分发器">蓝图接口与事件分发器</a><time datetime="2026-07-22T06:04:11.379Z" title="发表于 2026-07-22 14:04:11">2026-07-22</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/17/2026.7.17%E7%AC%94%E8%AE%B0/" title="2026.7.17笔记"><img src="/img/qisha.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2026.7.17笔记"/></a><div class="content"><a class="title" href="/2026/07/17/2026.7.17%E7%AC%94%E8%AE%B0/" title="2026.7.17笔记">2026.7.17笔记</a><time datetime="2026-07-17T06:17:15.802Z" title="发表于 2026-07-17 14:17:15">2026-07-17</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2026 By CyyyyY</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = null
+
+  const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
+
+  const createScriptElement = config => {
+    const ele = document.createElement('script')
+    Object.entries(config).forEach(([key, value]) => {
+      ele.setAttribute(key, value)
+    })
+    return ele
+  }
+
+  const loadGiscus = (el = document, key) => {
+    const mappingConfig = isShuoshuo
+      ? { 'data-mapping': 'specific', 'data-term': key }
+      : { 'data-mapping': (option && option['data-mapping']) || 'pathname' }
+
+    const giscusConfig = {
+      src: 'https://giscus.app/client.js',
+      'data-repo': 'CyyyyY170/CyyyyY170.github.io',
+      'data-repo-id': 'R_kgDOTP0qWA',
+      'data-category-id': 'DIC_kwDOTP0qWM4DBKfL',
+      'data-theme': getGiscusTheme(document.documentElement.getAttribute('data-theme')),
+      'data-reactions-enabled': '1',
+      crossorigin: 'anonymous',
+      async: true,
+      ...option,
+      ...mappingConfig
+    }
+
+    const scriptElement = createScriptElement(giscusConfig)
+
+    el.querySelector('#giscus-wrap').appendChild(scriptElement)
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGiscus = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+  }
+
+  const changeGiscusTheme = theme => {
+    const iframe = document.querySelector('#giscus-wrap iframe')
+    if (iframe) {
+      const message = {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(theme)
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(message, 'https://giscus.app')
+    }
+  }
+
+  btf.addGlobalFn('themeChange', changeGiscusTheme, 'giscus')
+
+  if (isShuoshuo) {
+    'Giscus' === 'Giscus'
+      ? window.shuoshuoComment = { loadComment: loadGiscus }
+      : window.loadOtherComment = loadGiscus
+    return
+  }
+
+  if ('Giscus' === 'Giscus' || !true) {
+    if (true) btf.loadComment(document.getElementById('giscus-wrap'), loadGiscus)
+    else loadGiscus()
+  } else {
+    window.loadOtherComment = loadGiscus
+  }
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

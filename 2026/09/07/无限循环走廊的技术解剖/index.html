@@ -1,0 +1,495 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>无限循环走廊实现 | CyyyyY的个人博客</title><meta name="author" content="CyyyyY,3318055170@qq.com"><meta name="copyright" content="CyyyyY"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="UE5 蓝图实现「无缝传送」：无限循环走廊的技术解剖 一个第一人称恐怖游戏 Demo 的核心机制：玩家穿过出口门后方的传送盒，被瞬间送回走廊起点——画面零跳变、速度不中断、方向不改变，同时整个世界在玩家眼皮底下完成一次”版本切换”。 本文拆解这套纯蓝图实现的完整方案：坐标重映射算法、蓝图节点链、与版本切换的同帧联动，以及让”无缝”真正成立的三个关卡设计条件。   一、问题：传送为什么容易穿帮这个游">
+<meta property="og:type" content="article">
+<meta property="og:title" content="无限循环走廊实现">
+<meta property="og:url" content="https://cyyyyy170.github.io/2026/09/07/%E6%97%A0%E9%99%90%E5%BE%AA%E7%8E%AF%E8%B5%B0%E5%BB%8A%E7%9A%84%E6%8A%80%E6%9C%AF%E8%A7%A3%E5%89%96/index.html">
+<meta property="og:site_name" content="CyyyyY的个人博客">
+<meta property="og:description" content="UE5 蓝图实现「无缝传送」：无限循环走廊的技术解剖 一个第一人称恐怖游戏 Demo 的核心机制：玩家穿过出口门后方的传送盒，被瞬间送回走廊起点——画面零跳变、速度不中断、方向不改变，同时整个世界在玩家眼皮底下完成一次”版本切换”。 本文拆解这套纯蓝图实现的完整方案：坐标重映射算法、蓝图节点链、与版本切换的同帧联动，以及让”无缝”真正成立的三个关卡设计条件。   一、问题：传送为什么容易穿帮这个游">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cyyyyy170.github.io/img/Anon.jpg">
+<meta property="article:published_time" content="2026-09-07T05:26:16.032Z">
+<meta property="article:modified_time" content="2026-09-07T05:37:12.904Z">
+<meta property="article:author" content="CyyyyY">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cyyyyy170.github.io/img/Anon.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "无限循环走廊实现",
+  "url": "https://cyyyyy170.github.io/2026/09/07/%E6%97%A0%E9%99%90%E5%BE%AA%E7%8E%AF%E8%B5%B0%E5%BB%8A%E7%9A%84%E6%8A%80%E6%9C%AF%E8%A7%A3%E5%89%96/",
+  "image": "https://cyyyyy170.github.io/img/Anon.jpg",
+  "datePublished": "2026-09-07T05:26:16.032Z",
+  "dateModified": "2026-09-07T05:37:12.904Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "CyyyyY",
+      "url": "https://cyyyyy170.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://cyyyyy170.github.io/2026/09/07/%E6%97%A0%E9%99%90%E5%BE%AA%E7%8E%AF%E8%B5%B0%E5%BB%8A%E7%9A%84%E6%8A%80%E6%9C%AF%E8%A7%A3%E5%89%96/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":230,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '无限循环走廊实现',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/reze.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/myface.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">12</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/Anon.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">CyyyyY的个人博客</span></a><a class="nav-page-title" href="/"><span class="site-name">无限循环走廊实现</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">无限循环走廊实现</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-09-07T05:26:16.032Z" title="发表于 2026-09-07 13:26:16">2026-09-07</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-09-07T05:37:12.904Z" title="更新于 2026-09-07 13:37:12">2026-09-07</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">2.9k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>9分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><div id="post-outdate-notice" data="{&quot;limitDay&quot;:365,&quot;messagePrev&quot;:&quot;已经过了&quot;,&quot;messageNext&quot;:&quot;天自上次更新，文章内容可能已经过期。&quot;,&quot;postUpdate&quot;:&quot;2026-09-07 13:37:12&quot;}" hidden></div><h1 id="UE5-蓝图实现「无缝传送」：无限循环走廊的技术解剖"><a href="#UE5-蓝图实现「无缝传送」：无限循环走廊的技术解剖" class="headerlink" title="UE5 蓝图实现「无缝传送」：无限循环走廊的技术解剖"></a>UE5 蓝图实现「无缝传送」：无限循环走廊的技术解剖</h1><blockquote>
+<p>一个第一人称恐怖游戏 Demo 的核心机制：玩家穿过出口门后方的传送盒，被瞬间送回走廊起点——<strong>画面零跳变、速度不中断、方向不改变</strong>，同时整个世界在玩家眼皮底下完成一次”版本切换”。</p>
+<p>本文拆解这套纯蓝图实现的完整方案：坐标重映射算法、蓝图节点链、与版本切换的同帧联动，以及让”无缝”真正成立的三个关卡设计条件。</p>
+</blockquote>
+<hr>
+<h2 id="一、问题：传送为什么容易穿帮"><a href="#一、问题：传送为什么容易穿帮" class="headerlink" title="一、问题：传送为什么容易穿帮"></a>一、问题：传送为什么容易穿帮</h2><p>这个游戏的核心体验是<strong>无限循环走廊</strong>：玩家沿着 C 形走廊走到尽头，开一扇门，走进去——发现自己回到了起点，但走廊里的内容已经变了。</p>
+<p>普通的传送实现是 <code>SetActorLocation</code>——直接把人挪到目标点。这在一款要求”直行无感”的恐怖游戏里是致命的，因为传送瞬间有五件事会暴露它：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>执行要求</th>
+<th>穿帮方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><strong>视角连续</strong></td>
+<td>镜头跳变&#x2F;闪帧，玩家立刻意识到”被传送了”</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>方向一致</strong></td>
+<td>传送后朝向不对：玩家向前走，落地却面朝墙</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>运动保持</strong></td>
+<td>速度清零或方向突变：正在走的人落地瞬间”顿一下”</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>光照一致</strong></td>
+<td>传送两侧明暗&#x2F;色温不同，眼前一黑一亮</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>音频连续</strong></td>
+<td>环境音断裂、混响突变</td>
+</tr>
+</tbody></table>
+<p>前三条是技术问题，后两条是关卡设计问题。技术方案要一次解决前三条，同时给后两条留出配合空间。</p>
+<h2 id="二、总体架构：C-形走廊-传送闭环"><a href="#二、总体架构：C-形走廊-传送闭环" class="headerlink" title="二、总体架构：C 形走廊 + 传送闭环"></a>二、总体架构：C 形走廊 + 传送闭环</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">入口门（短A端头，装饰）</span><br><span class="line">   │</span><br><span class="line">短A 3m（中性：出生点 + 传送落点）──拐角1── 主走廊 30m（Ver_* 版本区）──拐角2── 副走廊（Ver_* 版本区）── 出口门（每圈E键开）</span><br><span class="line">   ↑                                                                                                    │</span><br><span class="line">   └──────────────────────── 无缝传送回短A（门后 Entrance 盒 → 短A Exit 盒）─────────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<p>几个关键决策：</p>
+<ul>
+<li><strong>走廊不物理闭合</strong>。没有回程段、没有双半区、没有中间墙——C 形布局，闭环靠传送。</li>
+<li><strong>传送发生在门后</strong>。玩家开门 → 穿过门后的 <code>Entrance</code> 触发盒 → 被瞬间送回短A的 <code>Exit</code> 落点。门的开合动画天然遮蔽了循环边界，玩家<strong>看不到</strong>传送发生的那一刻周围环境的变化（因为落点环境与门后环境一致，见§六）。</li>
+<li><strong>传送即切换</strong>。传送完成的同时，整个关卡完成一次版本切换（v1→v2→…→v8→v1），8 个版本 &#x3D; 8 圈。玩家落地的短A永远中性，变化全部发生在玩家视野之外（拐角后面），等他走过去才慢慢发现”这一圈不一样了”。</li>
+</ul>
+<blockquote>
+<p>方案对比：曾经考虑过”零位移版本切换”（传送不动人、只切内容）和”口形双半区”（物理闭合 + 中间墙），最终选择传送闭环，因为它保留了”出口门 → 真出口”的 M3 结局翻转空间（最后一圈停用传送盒，门后就是真正的结局）。</p>
+</blockquote>
+<h2 id="三、核心算法：本地坐标-→-世界坐标的重映射"><a href="#三、核心算法：本地坐标-→-世界坐标的重映射" class="headerlink" title="三、核心算法：本地坐标 → 世界坐标的重映射"></a>三、核心算法：本地坐标 → 世界坐标的重映射</h2><p>传送的本质是<strong>把玩家在入口盒局部坐标系中的姿态，原样搬运到出口盒的世界坐标系里</strong>。</p>
+<p>设：</p>
+<ul>
+<li><code>E</code> &#x3D; Entrance 盒的世界变换（门后）</li>
+<li><code>X</code> &#x3D; Exit 盒的世界变换（短A落点）</li>
+<li><code>P</code> &#x3D; 玩家当前世界变换</li>
+</ul>
+<p>三步：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">P_rel = Inv(E) · P        （玩家姿态 → 入口局部系）</span><br><span class="line">P&#x27;    = X · P_rel         （入口局部系 → 出口世界系）</span><br></pre></td></tr></table></figure>
+
+<p>用蓝图里的说法：<strong><code>MakeRelativeTransform(P, E)</code> 再 <code>ComposeTransforms(X, P_rel)</code></strong>。</p>
+<p>这一做法的妙处在于<strong>速度和朝向的连续性自动成立</strong>：</p>
+<ul>
+<li>玩家在入口盒里偏左 0.3m、面朝门走 → 落地时在出口盒里偏左 0.3m、面朝同样的走廊前进方向。相对关系被完整保留，直行感不打折。</li>
+<li>速度同理：把玩家当前世界速度从入口局部系旋转到出口世界系——<strong>动量方向跟着走廊朝向一起转</strong>，玩家”正在往前走”的状态不中断，甚至倒着走、侧着走都成立（实测：倒走穿过传送盒，倒着出现在短A，动量连续）。</li>
+</ul>
+<p>速度重映射的数学形式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">V_rel = Inv(Rot_E) · V_world</span><br><span class="line">V&#x27;    = Rot_X · V_rel</span><br></pre></td></tr></table></figure>
+
+<p>蓝图中用 <code>MakeRotFromX</code>（出口前向向量 → Rotator）+ <code>Vector &lt;&lt; Rotator</code> &#x2F; <code>Rotator &gt;&gt; Vector</code> 旋转节点实现。</p>
+<p>还有一个极易被忽略的细节：<strong>控制器朝向必须单独处理</strong>。<code>K2_SetActorTransform</code> 只挪动 Pawn 本体，摄像机的朝向由 Controller 的 ControlRotation 单独维护。因此流程里要有：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">OldRot = GetControlRotation()          （传送前取）</span><br><span class="line">NewRot = 重映射(OldRot, E → X)          （同样的旋转差）</span><br><span class="line">SetControlRotation(NewRot)             （传送后写回）</span><br></pre></td></tr></table></figure>
+
+<p>漏掉这一步的典型症状：传送后 Pawn 面向正确，但玩家视角还停留在传送前方向，必须手动甩一下鼠标才”回正”——穿帮。</p>
+<h2 id="四、蓝图落地：BP-SeamlessTeleportBox"><a href="#四、蓝图落地：BP-SeamlessTeleportBox" class="headerlink" title="四、蓝图落地：BP_SeamlessTeleportBox"></a>四、蓝图落地：BP_SeamlessTeleportBox</h2><p>从资产逆向出的完整结构如下。</p>
+<h3 id="组件"><a href="#组件" class="headerlink" title="组件"></a>组件</h3><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>类型</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>根组件</td>
+<td>SceneComponent</td>
+<td>挂载</td>
+</tr>
+<tr>
+<td><code>Entrance</code></td>
+<td>BoxComponent</td>
+<td>触发盒，摆门洞后 0.3–0.5m，覆盖整个走廊截面（2.2×2.8×0.5m），红箭头朝行进方向</td>
+</tr>
+<tr>
+<td>ArrowComponent</td>
+<td>Arrow</td>
+<td>编辑器里可视化出口朝向</td>
+</tr>
+</tbody></table>
+<h3 id="变量"><a href="#变量" class="headerlink" title="变量"></a>变量</h3><table>
+<thead>
+<tr>
+<th>变量</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Exit</code></td>
+<td>SceneComponent 引用（Instance Editable）</td>
+<td>关卡里指向短A落点处的定位组件</td>
+</tr>
+<tr>
+<td><code>Exitfwd</code></td>
+<td>Vector（Instance Editable）</td>
+<td>出口前向（落点后继续直行的方向，指向拐角1）</td>
+</tr>
+<tr>
+<td><code>LoopManagerRef</code></td>
+<td>BP_LoopManager 引用（Instance Editable）</td>
+<td>版本切换管理器</td>
+</tr>
+<tr>
+<td><code>DestinationTransform</code> &#x2F; <code>DestinationVelocity</code></td>
+<td>Transform &#x2F; Vector</td>
+<td>传送帧内的临时计算结果</td>
+</tr>
+</tbody></table>
+<h3 id="事件链（OnComponentBeginOverlap，绑在-Entrance-上）"><a href="#事件链（OnComponentBeginOverlap，绑在-Entrance-上）" class="headerlink" title="事件链（OnComponentBeginOverlap，绑在 Entrance 上）"></a>事件链（OnComponentBeginOverlap，绑在 Entrance 上）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">玩家进入 Entrance 盒</span><br><span class="line">  → GetPlayerCharacter / GetPlayerController / GetMovementComponent</span><br><span class="line">  → GetControlRotation                     （记下当前视角朝向）</span><br><span class="line">  → GetDestinationTransform():             （自定义函数）</span><br><span class="line">        K2_GetComponentToWorld(Entrance)   （入口盒世界变换 E）</span><br><span class="line">        MakeRelativeTransform(P, E)        （玩家姿态 → 入口局部系）</span><br><span class="line">        GetTransform(Exit)                 （出口世界变换 X）</span><br><span class="line">        ComposeTransforms(X, P_rel)        （→ 目标世界变换）</span><br><span class="line">  → K2_SetActorTransform(Destination, bTeleport = true)   （瞬移，不触发物理滑动）</span><br><span class="line">  → GetDestinationVelocity():              （自定义函数）</span><br><span class="line">        MakeRotFromX(Exitfwd)              （出口朝向 → Rotator）</span><br><span class="line">        Vector &lt;&lt; / &gt;&gt; Rotator             （世界速度按入口→出口旋转差重映射）</span><br><span class="line">  → 写回 MovementComponent 的 Velocity      （动量方向同步到出口朝向）</span><br><span class="line">  → SetControlRotation(NewRotation)        （视角重映射，见§三）</span><br><span class="line">  → Branch(LoopManagerRef Is Valid)</span><br><span class="line">        → LoopManagerRef.AdvanceVersion()  （同帧切换版本，见§五）</span><br></pre></td></tr></table></figure>
+
+<p>两个值得解释的节点：</p>
+<ul>
+<li><strong><code>K2_SetActorTransform(..., bTeleport = true)</code></strong>：Teleport 语义——不扫掠、不触发碰撞响应、不产生物理速度突变，是最干净的”挪位置”方式。用它而不是 <code>SetActorLocation</code>，是避免落地时和地面碰撞体互相推挤（抖动&#x2F;卡住）的关键。</li>
+<li><strong>事件只绑 Entrance</strong>：Exit 盒不绑任何事件。这自然消灭了”折返多切”问题——玩家落地后往回走、或反复进出短A，都不会触发任何东西，每圈只推进一次。</li>
+</ul>
+<h2 id="五、同帧联动：BP-LoopManager-版本切换"><a href="#五、同帧联动：BP-LoopManager-版本切换" class="headerlink" title="五、同帧联动：BP_LoopManager 版本切换"></a>五、同帧联动：BP_LoopManager 版本切换</h2><p>传送负责”回环”，版本切换负责”世界在变”。两者的时序要求：<strong>同帧完成，玩家不可能看到中间态</strong>。</p>
+<p>LoopManager 是关卡里的单实例 Actor，逻辑极其简单：</p>
+<p><strong>BeginPlay</strong>：隐藏 v2..v8</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">For Loop（Index = 2 .. MaxVersion）</span><br><span class="line">  → Get All Actors With Tag（Tag = &quot;Ver_&quot; + Index）</span><br><span class="line">      → ForEach → Set Actor Hidden In Game = true</span><br></pre></td></tr></table></figure>
+
+<p><strong>AdvanceVersion()</strong>（由传送盒调用）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">藏旧：Get All Actors With Tag(&quot;Ver_&quot; + CurrentVersion) → ForEach → Set Hidden = true</span><br><span class="line">CurrentVersion = CurrentVersion % MaxVersion + 1      （v8 之后回卷到 v1）</span><br><span class="line">显新：Get All Actors With Tag(&quot;Ver_&quot; + CurrentVersion) → ForEach → Set Hidden = false</span><br><span class="line">OnLoopAdvanced.Broadcast(CurrentVersion)              （事件分发器，留给异常系统订阅）</span><br></pre></td></tr></table></figure>
+
+<p>设计要点：</p>
+<ul>
+<li><strong>单关卡 + Tag 显隐</strong>，不用 Level Streaming。8 个版本的内容全部预生成在同一个持久关卡里，切换 &#x3D; 一组 Actor 的显隐翻转，没有加载、没有卡顿——“切换会不会卡”这个问题<strong>根本不存在</strong>。</li>
+<li><strong>动态 Tag 查询</strong>：<code>&quot;Ver_&quot; Append ToString(Index) → String to Name</code>。不缓存数组、不用 Map，切换时现场查询。版本组里增删任何物体都不需要改管理器代码。</li>
+<li><strong><code>OnLoopAdvanced(Version)</code> 分发器</strong>是 M3 异常系统的挂载点：每个异常事件按版本号订阅，切换瞬间自动生效。</li>
+</ul>
+<h2 id="六、让无缝真正成立的三个关卡设计条件"><a href="#六、让无缝真正成立的三个关卡设计条件" class="headerlink" title="六、让无缝真正成立的三个关卡设计条件"></a>六、让无缝真正成立的三个关卡设计条件</h2><p>技术做对了”位置&#x2F;速度&#x2F;视角”，但传送瞬间玩家眼睛会看到什么，是关卡设计决定的。三条铁律，违反任何一条当场穿帮：</p>
+<ol>
+<li><strong>短A 绝对中性</strong>：切换瞬间玩家正站在短A里——短A 放任何版本差异内容，切换的那一刻它就会在玩家眼皮底下变。所以短A（出生点 + 传送落点）永远干净，是全关卡唯一”不变的锚点”。</li>
+<li><strong>拐角干净区 5m</strong>：玩家站在短A，透过拐角1 能看到主走廊头段的一条”余光楔形”。主走廊前 5m 必须所有版本共用、无差异内容，版本变化从干净区之后才开始。</li>
+<li><strong>传送两侧环境一致</strong>：Entrance 盒周边（门后）和 Exit 盒周边（短A）的墙、地板、灯光必须一模一样。穿门瞬间画面构图不跳，玩家才会觉得”我就是走到了短A”，而不是”被传送了”。</li>
+</ol>
+<p>配套细节：灯光全部 <strong>Movable、不烘焙</strong>（显隐切换的 Actor 与烘焙光照不兼容）；步速锁 180cm&#x2F;s（慢步，恐怖感的底子，也降低传送瞬间的感知敏感度）；环境底噪全关卡共享，传送不切音频。</p>
+<h2 id="七、踩坑记录（实测掉进去过的）"><a href="#七、踩坑记录（实测掉进去过的）" class="headerlink" title="七、踩坑记录（实测掉进去过的）"></a>七、踩坑记录（实测掉进去过的）</h2><table>
+<thead>
+<tr>
+<th>#</th>
+<th>坑</th>
+<th>症状</th>
+<th>解法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>盒子红箭头朝向反了 180°</td>
+<td>玩家落地头朝后、速度反向</td>
+<td>Entrance&#x2F;Exit 红箭头都朝玩家行进方向</td>
+</tr>
+<tr>
+<td>2</td>
+<td>BoxSize &#x3D; 0</td>
+<td>重叠事件永远不触发</td>
+<td>在实例上设置盒子尺寸</td>
+</tr>
+<tr>
+<td>3</td>
+<td>事件绑到 Exit 盒上</td>
+<td>出生即触发，开局就传送</td>
+<td>事件只绑 Entrance，Exit 不绑</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>Set CurrentVersion</code> 接在循环体 then 上</td>
+<td>组里几个物体就跳几个版本</td>
+<td>必须接在 ForEach 的 <strong>Completed</strong> 引脚上</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Tag 加在 Component Tags</td>
+<td><code>Get All Actors With Tag</code> 查不到</td>
+<td>只有 Actor 分类下的 Tags 才被匹配</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Tag 拼写&#x2F;大小写不一致</td>
+<td>藏旧显新失效，两个版本叠在一起</td>
+<td><code>Ver_1</code> 全关卡拼写完全一致</td>
+</tr>
+</tbody></table>
+<h2 id="八、验收测试"><a href="#八、验收测试" class="headerlink" title="八、验收测试"></a>八、验收测试</h2><p>传送盒上线时的 7 项测试，其中第 2、4 项是整个方案的地基：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>操作</th>
+<th>预期</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>开局走向主走廊</td>
+<td>看到 v1 内容，v2 不可见</td>
+</tr>
+<tr>
+<td>2</td>
+<td>走完整圈、开门、穿过传送盒</td>
+<td>回到短A，<strong>画面零跳变</strong>，朝向&#x2F;速度连续</td>
+</tr>
+<tr>
+<td>3</td>
+<td>第二圈走主走廊</td>
+<td>看到 v2 内容，v1 已消失</td>
+</tr>
+<tr>
+<td>4</td>
+<td>传送瞬间盯着屏幕</td>
+<td>短A 内无任何可见变化</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>倒走穿过传送盒</strong></td>
+<td>倒着出现在短A，动量连续（方向无关性）</td>
+</tr>
+<tr>
+<td>6</td>
+<td>传送后立刻回头</td>
+<td>看到短A&#x2F;入口门场景，不是副走廊</td>
+</tr>
+<tr>
+<td>7</td>
+<td>连走多圈</td>
+<td>每圈版本 +1，v8→v1 回卷</td>
+</tr>
+</tbody></table>
+<h2 id="九、通用化与展望"><a href="#九、通用化与展望" class="headerlink" title="九、通用化与展望"></a>九、通用化与展望</h2><p>这套”入口局部系 → 出口世界系”的重映射方案，抽掉游戏背景就是一个通用的 <strong>A→B 无缝传送工具</strong>，可以直接套用：</p>
+<ul>
+<li><strong>不可能空间</strong>：任何两个视觉上”不该连通”的房间之间开一扇门，门后放 Entrance 盒，门外放 Exit 盒；</li>
+<li><strong>无尽楼梯 &#x2F; 无尽走廊</strong>：比物理闭环方案省一整段回程几何；</li>
+<li><strong>传送门游戏（Portal-like）</strong>：把 Exit 盒换成另一个动态可移动的引用即可，算法不变。</li>
+</ul>
+<p>本项目的下一步（M3）：最后一圈（v8）<strong>停用传送盒</strong>，出口门后放真出口——同一个门，前 7 圈通向循环，最后一圈通向结局。到此完成闭环。</p>
+<hr>
+<p><em>技术栈：UE 5.8 · 纯蓝图（零 C++）· 单持久关卡。传送盒与版本切换均已实测通过（含倒走穿盒、连续多圈回卷）。</em></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://cyyyyy170.github.io">CyyyyY</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://cyyyyy170.github.io/2026/09/07/%E6%97%A0%E9%99%90%E5%BE%AA%E7%8E%AF%E8%B5%B0%E5%BB%8A%E7%9A%84%E6%8A%80%E6%9C%AF%E8%A7%A3%E5%89%96/">https://cyyyyy170.github.io/2026/09/07/%E6%97%A0%E9%99%90%E5%BE%AA%E7%8E%AF%E8%B5%B0%E5%BB%8A%E7%9A%84%E6%8A%80%E6%9C%AF%E8%A7%A3%E5%89%96/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://cyyyyy170.github.io" target="_blank">CyyyyY的个人博客</a>！</span></div></div><div class="tag_share"><div class="post-share"></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/09/04/9.4%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93/" title="2026.9.4纯蓝图FPS项目总结"><img class="cover" src="/img/mygo.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">2026.9.4纯蓝图FPS项目总结</div></div><div class="info-2"><div class="info-item-1">FPS 波次生存 Demo:UE5.8 纯蓝图项目的技术复盘 用纯蓝图完成一个 FPS 生存玩法闭环:射击 → 受击反馈 → 死亡流程 → 波次生存 → 灯光信号 → 击杀掉落。本文是技术向复盘,写给同样在用蓝图做游戏的人。  技术栈UE 5.8,零 C++ 纯蓝图。用到的系统:Enhanced Input、Animation Montage + AnimNotify、MetaSound、Timeline、UMG、AI MoveTo + NavMesh、Sphere Trigger。所有自研逻辑在 Content/Code 下按 Enemy &#x2F; Pickup &#x2F; Player &#x2F; Weapon 分层;资产来自商城包。 十个技术亮点1. 手搓 FPS 相机臂(Enhanced Input + 每帧同步控制旋转)没有用现成的 Character 视角,而是自己搭了第一人称架构:七个 IA(移动&#x2F;视角&#x2F;奔跑&#x2F;瞄准&#x2F;开火&#x2F;换弹&#x2F;重开),IA_Look 的 X→AddControllerYawInpu...</div></div></div></a></nav><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="giscus-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/myface.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">CyyyyY</div><div class="author-info-description">致力于所爱</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">12</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/CyyyyY170"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/CyyyyY170" target="_blank" title="Github"><i class="fab fa-github" style="color: #00AEEC;"></i></a><a class="social-icon" href="https://steamcommunity.com/profiles/76561199184466419/" target="_blank" title="Steam"><i class="fab fa-steam" style="color: #00AEEC;"></i></a><a class="social-icon" href="https://space.bilibili.com/388242453" target="_blank" title="BiliBili"><i class="fab fa-bilibili" style="color: #00AEEC;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">一个彩笔的学习分享</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#UE5-%E8%93%9D%E5%9B%BE%E5%AE%9E%E7%8E%B0%E3%80%8C%E6%97%A0%E7%BC%9D%E4%BC%A0%E9%80%81%E3%80%8D%EF%BC%9A%E6%97%A0%E9%99%90%E5%BE%AA%E7%8E%AF%E8%B5%B0%E5%BB%8A%E7%9A%84%E6%8A%80%E6%9C%AF%E8%A7%A3%E5%89%96"><span class="toc-number">1.</span> <span class="toc-text">UE5 蓝图实现「无缝传送」：无限循环走廊的技术解剖</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%97%AE%E9%A2%98%EF%BC%9A%E4%BC%A0%E9%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AE%B9%E6%98%93%E7%A9%BF%E5%B8%AE"><span class="toc-number">1.1.</span> <span class="toc-text">一、问题：传送为什么容易穿帮</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84%EF%BC%9AC-%E5%BD%A2%E8%B5%B0%E5%BB%8A-%E4%BC%A0%E9%80%81%E9%97%AD%E7%8E%AF"><span class="toc-number">1.2.</span> <span class="toc-text">二、总体架构：C 形走廊 + 传送闭环</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%A0%B8%E5%BF%83%E7%AE%97%E6%B3%95%EF%BC%9A%E6%9C%AC%E5%9C%B0%E5%9D%90%E6%A0%87-%E2%86%92-%E4%B8%96%E7%95%8C%E5%9D%90%E6%A0%87%E7%9A%84%E9%87%8D%E6%98%A0%E5%B0%84"><span class="toc-number">1.3.</span> <span class="toc-text">三、核心算法：本地坐标 → 世界坐标的重映射</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E8%93%9D%E5%9B%BE%E8%90%BD%E5%9C%B0%EF%BC%9ABP-SeamlessTeleportBox"><span class="toc-number">1.4.</span> <span class="toc-text">四、蓝图落地：BP_SeamlessTeleportBox</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%84%E4%BB%B6"><span class="toc-number">1.4.1.</span> <span class="toc-text">组件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%98%E9%87%8F"><span class="toc-number">1.4.2.</span> <span class="toc-text">变量</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8B%E4%BB%B6%E9%93%BE%EF%BC%88OnComponentBeginOverlap%EF%BC%8C%E7%BB%91%E5%9C%A8-Entrance-%E4%B8%8A%EF%BC%89"><span class="toc-number">1.4.3.</span> <span class="toc-text">事件链（OnComponentBeginOverlap，绑在 Entrance 上）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%90%8C%E5%B8%A7%E8%81%94%E5%8A%A8%EF%BC%9ABP-LoopManager-%E7%89%88%E6%9C%AC%E5%88%87%E6%8D%A2"><span class="toc-number">1.5.</span> <span class="toc-text">五、同帧联动：BP_LoopManager 版本切换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E8%AE%A9%E6%97%A0%E7%BC%9D%E7%9C%9F%E6%AD%A3%E6%88%90%E7%AB%8B%E7%9A%84%E4%B8%89%E4%B8%AA%E5%85%B3%E5%8D%A1%E8%AE%BE%E8%AE%A1%E6%9D%A1%E4%BB%B6"><span class="toc-number">1.6.</span> <span class="toc-text">六、让无缝真正成立的三个关卡设计条件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95%EF%BC%88%E5%AE%9E%E6%B5%8B%E6%8E%89%E8%BF%9B%E5%8E%BB%E8%BF%87%E7%9A%84%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">七、踩坑记录（实测掉进去过的）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E9%AA%8C%E6%94%B6%E6%B5%8B%E8%AF%95"><span class="toc-number">1.8.</span> <span class="toc-text">八、验收测试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E9%80%9A%E7%94%A8%E5%8C%96%E4%B8%8E%E5%B1%95%E6%9C%9B"><span class="toc-number">1.9.</span> <span class="toc-text">九、通用化与展望</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/09/07/%E6%97%A0%E9%99%90%E5%BE%AA%E7%8E%AF%E8%B5%B0%E5%BB%8A%E7%9A%84%E6%8A%80%E6%9C%AF%E8%A7%A3%E5%89%96/" title="无限循环走廊实现"><img src="/img/Anon.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="无限循环走廊实现"/></a><div class="content"><a class="title" href="/2026/09/07/%E6%97%A0%E9%99%90%E5%BE%AA%E7%8E%AF%E8%B5%B0%E5%BB%8A%E7%9A%84%E6%8A%80%E6%9C%AF%E8%A7%A3%E5%89%96/" title="无限循环走廊实现">无限循环走廊实现</a><time datetime="2026-09-07T05:26:16.032Z" title="发表于 2026-09-07 13:26:16">2026-09-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/09/04/9.4%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93/" title="2026.9.4纯蓝图FPS项目总结"><img src="/img/mygo.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2026.9.4纯蓝图FPS项目总结"/></a><div class="content"><a class="title" href="/2026/09/04/9.4%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93/" title="2026.9.4纯蓝图FPS项目总结">2026.9.4纯蓝图FPS项目总结</a><time datetime="2026-09-04T09:19:48.230Z" title="发表于 2026-09-04 17:19:48">2026-09-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/08/16/2026.8.16%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" title="2026.8.16纯蓝图FPS学习笔记"><img src="/img/Lucy.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2026.8.16纯蓝图FPS学习笔记"/></a><div class="content"><a class="title" href="/2026/08/16/2026.8.16%E7%BA%AF%E8%93%9D%E5%9B%BEFPS%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" title="2026.8.16纯蓝图FPS学习笔记">2026.8.16纯蓝图FPS学习笔记</a><time datetime="2026-08-16T06:00:08.687Z" title="发表于 2026-08-16 14:00:08">2026-08-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/" title="2026.7.28笔记"><img src="/img/blue%20sky.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2026.7.28笔记"/></a><div class="content"><a class="title" href="/2026/07/28/2026.7.28%E7%AC%94%E8%AE%B0/" title="2026.7.28笔记">2026.7.28笔记</a><time datetime="2026-07-28T05:57:57.191Z" title="发表于 2026-07-28 13:57:57">2026-07-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/22/%E8%93%9D%E5%9B%BE%E6%8E%A5%E5%8F%A3%E4%B8%8E%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E5%99%A8/" title="蓝图接口与事件分发器"><img src="/img/grand%20blue.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="蓝图接口与事件分发器"/></a><div class="content"><a class="title" href="/2026/07/22/%E8%93%9D%E5%9B%BE%E6%8E%A5%E5%8F%A3%E4%B8%8E%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E5%99%A8/" title="蓝图接口与事件分发器">蓝图接口与事件分发器</a><time datetime="2026-07-22T06:04:11.379Z" title="发表于 2026-07-22 14:04:11">2026-07-22</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2026 By CyyyyY</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = null
+
+  const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
+
+  const createScriptElement = config => {
+    const ele = document.createElement('script')
+    Object.entries(config).forEach(([key, value]) => {
+      ele.setAttribute(key, value)
+    })
+    return ele
+  }
+
+  const loadGiscus = (el = document, key) => {
+    const mappingConfig = isShuoshuo
+      ? { 'data-mapping': 'specific', 'data-term': key }
+      : { 'data-mapping': (option && option['data-mapping']) || 'pathname' }
+
+    const giscusConfig = {
+      src: 'https://giscus.app/client.js',
+      'data-repo': 'CyyyyY170/CyyyyY170.github.io',
+      'data-repo-id': 'R_kgDOTP0qWA',
+      'data-category-id': 'DIC_kwDOTP0qWM4DBKfL',
+      'data-theme': getGiscusTheme(document.documentElement.getAttribute('data-theme')),
+      'data-reactions-enabled': '1',
+      crossorigin: 'anonymous',
+      async: true,
+      ...option,
+      ...mappingConfig
+    }
+
+    const scriptElement = createScriptElement(giscusConfig)
+
+    el.querySelector('#giscus-wrap').appendChild(scriptElement)
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGiscus = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+  }
+
+  const changeGiscusTheme = theme => {
+    const iframe = document.querySelector('#giscus-wrap iframe')
+    if (iframe) {
+      const message = {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(theme)
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(message, 'https://giscus.app')
+    }
+  }
+
+  btf.addGlobalFn('themeChange', changeGiscusTheme, 'giscus')
+
+  if (isShuoshuo) {
+    'Giscus' === 'Giscus'
+      ? window.shuoshuoComment = { loadComment: loadGiscus }
+      : window.loadOtherComment = loadGiscus
+    return
+  }
+
+  if ('Giscus' === 'Giscus' || !true) {
+    if (true) btf.loadComment(document.getElementById('giscus-wrap'), loadGiscus)
+    else loadGiscus()
+  } else {
+    window.loadOtherComment = loadGiscus
+  }
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
